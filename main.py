@@ -12,6 +12,6 @@ if __name__ == "__main__":
 
 	print(s_sentence)
     
-	tokens = dp.get_tokens("/home/pablo/Downloads/GoldStandard")
+	tokens = dp.get_tokens("/raw_data")
     
 	print(tokens)
