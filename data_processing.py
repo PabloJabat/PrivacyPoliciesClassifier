@@ -9,9 +9,11 @@ def sentence_serialization(sentence, word2idx, lower_case = True):
     Args:
         sentence: string, sentence that we want to serialize.
         word2idx: dictionary, dictionary with words as keys and indexes as values.
-        lower_case: boolean, turns all words in the sentence to lower case. Useful if word2idx 		doesn't support upper case words.
+        lower_case: boolean, turns all words in the sentence to lower case. Useful if word2idx 
+	doesn't support upper case words.
     Returns: 
-        s_sentence: list, list containing the indexes of the words present in the sentence. 		s_sentence stands for serialized sentence.
+        s_sentence: list, list containing the indexes of the words present in the sentence. 
+	s_sentence stands for serialized sentence.
         
     """
     
