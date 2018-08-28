@@ -11,3 +11,7 @@ if __name__ == "__main__":
 	s_sentence = dp.sentence_serialization(sentence, word2idx)
 
 	print(s_sentence)
+    
+	tokens = dp.get_tokens("/home/pablo/Downloads/GoldStandard")
+    
+	print(tokens)
