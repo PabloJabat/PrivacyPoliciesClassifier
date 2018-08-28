@@ -6,6 +6,6 @@ To run the example code just run:
 
 `python main.py`
 
-This code will show you an example of serializing a sentence into integers and output a set of all the words included in the gold standard.
+This code will show you an example of serializing a sentence into integers and output a set of all the words included in the gold standard. It will also create a file called dictionary.pkl with all the information of that set. The main will read directly from that file as long as it exist. This will make the code run much faster. 
 
 
