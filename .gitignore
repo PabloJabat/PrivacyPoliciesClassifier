@@ -6,3 +6,4 @@ raw_data/*
 processed_data/*
 glove.6B/*
 !.keep
+!labels.pkl

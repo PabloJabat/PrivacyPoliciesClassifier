@@ -1,0 +1,32 @@
+(dp0
+S'First Party Collection/Use'
+p1
+I0
+sS'Data Retention'
+p2
+I3
+sS'User Choice/Control'
+p3
+I9
+sS'Policy Change'
+p4
+I7
+sS'Do Not Track'
+p5
+I6
+sS'Data Security'
+p6
+I4
+sS'Third Party Sharing/Collection'
+p7
+I1
+sS'International and Specific Audiences'
+p8
+I5
+sS'User Access, Edit and Deletion'
+p9
+I2
+sS'Other'
+p10
+I8
+s.
