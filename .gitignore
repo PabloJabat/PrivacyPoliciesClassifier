@@ -3,7 +3,8 @@
 *.pyc
 *.pkl
 raw_data/*
-processed_data/*
+processed_data/sentence_matrices/*
+processed_data/labels_matrices/*
 glove.6B/*
 !.keep
 !labels.pkl
