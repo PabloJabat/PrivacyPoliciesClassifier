@@ -1,17 +1,31 @@
 import data_processing as dp
+import sys
+import random
+import pickle
+
+print 'Number of arguments:', len(sys.argv), 'arguments.'
+print 'Argument List:', str(sys.argv)
 
 if __name__ == "__main__":
 
-	print("this is the main")
+	path = sys.argv[1]
 
-	sentence = "This is a sentence"
+	dims = sys.argv[2]
 
-	word2idx = {"this": 0, "is": 1, "a": 2, "sentence": 3}
+	labels_file = open("labels.pkl","rb")
 
-	s_sentence = dp.sentence_serialization(sentence, word2idx)
+	labels = pickle.load(labels_file)
 
-	print(s_sentence)
+	labels_file.close()
     
-	tokens = dp.get_tokens("/raw_data")
+	tokens = dp.get_tokens("raw_data")
     
-	print(tokens)
+	print("Random samples: " + str(random.sample(tokens, 2)))
+
+	word2vector, word2idx = dp.get_glove_dicts(path, dims, True)
+
+	weights_matrix, word2idx = dp.get_weight_matrix(tokens, word2vector, dims, True)
+
+	sentence_matrices, labels_matrices = dp.process_dataset(path, word2idx, labels, read = False)
+
+	print("Program executed succesfully ...")
