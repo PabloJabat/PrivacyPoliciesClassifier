@@ -344,8 +344,6 @@ def process_dataset(path, word2idx, labels, read = False):
         
         print("Processing dataset ...")
         
-        files.remove(".keep")
-        
         sentence_matrices = list()
 
         labels_matrices = list()
