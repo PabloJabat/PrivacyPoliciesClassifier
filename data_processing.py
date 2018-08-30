@@ -9,7 +9,7 @@ import numpy as np
 def sentence_serialization(sentence, word2idx, lower_case = True):
     """ 
     
-    Transforms a sentence into a list of integers.
+    Transforms a sentence into a list of integers. No integer will be appended if the token is not present in word2idx.
     
     Args:
         sentence: string, sentence that we want to serialize.
@@ -291,8 +291,10 @@ def process_dataset(path, word2idx, labels, read = False):
         labels: labels: dictionary, dictionary with the labels as the keys and indexes as the values.
         read: boolean, variable that allows us to decide wether to read from pre-processed files or not. 
     Returns:
-        sentence_matrices:
-        labels_matrices:
+        sentence_matrices: list, a list of lists of lists containing the segments of the files transformed into integers. 
+        sentence_matrices[i][j][k] -> "i" is for the file, "j" for the line and "k" for the token. 
+        labels_matrices: list, a list of lists of lists containing the labels of the dataset. labels_matrices[i][j][k] -> "i"
+        is for the file, "j" for the line and "k" for the boolean variable specifying the presence of the a label.
     
     """
     
