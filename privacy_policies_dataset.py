@@ -1,4 +1,5 @@
 import data_processing as dp
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
@@ -29,6 +30,32 @@ class PrivacyPoliciesDataset(Dataset):
         label = self.labels_list[idx]
         
         return (segment, label)
+    
+    def resize_segments(self, clearance = 10):
+    
+        maximun_len = 0
+
+        for segment in self.segments_list:
+
+            if len(segment) > maximun_len:
+
+                maximun_len = len(segment)
+
+        maximun_len += clearance
+
+        for i, segment in enumerate(self.segments_list):
+
+            array = segment.numpy()
+
+            zeros_to_prepend = (maximun_len - len(array))/2
+
+            zeros_to_append = maximun_len - len(array) - zeros_to_prepend
+
+            resized_array = np.append(np.zeros(zeros_to_prepend), array)
+
+            resized_array = np.append(resized_array, np.zeros(zeros_to_append))
+
+            self.segments_list[i] = resized_array
     
     def unpack_segments(self, word2idx, labels):
 
