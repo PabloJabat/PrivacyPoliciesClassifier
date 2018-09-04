@@ -3,6 +3,7 @@
 *.txt
 *.pyc
 *.pkl
+agg_data/*
 raw_data/*
 processed_data/sentence_matrices/*
 processed_data/labels_matrices/*
