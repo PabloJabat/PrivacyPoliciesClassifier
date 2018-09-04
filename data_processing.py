@@ -161,13 +161,13 @@ def get_glove_dicts(path, dims, read = False):
         
         print("Processing dataset ...")
 
-        words = []
+        words = [None]
 
-        word2idx = {}
+        word2idx = {None: 0}
 
-        idx = 0
+        idx = 1
 
-        vectors = []
+        vectors = [np.zeros(dims)]
 
         with open(join(path,path + "." + str(dims) + "d.txt")) as glove_file:
 
@@ -239,16 +239,18 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
     else:
         
         print("Processing dataset ...")
-
-        matrix_len = len(dictionary)
+        
+        # We add 1 to onclude the None value
+        
+        matrix_len = len(dictionary) + 1
 
         weights_matrix = np.zeros((matrix_len, dims))
         
-        word2idx = {}
+        word2idx = {None: 0}
 
         words_found = 0
 
-        for i, word in enumerate(dictionary):
+        for i, word in enumerate(dictionary,1):
 
             try: 
 
