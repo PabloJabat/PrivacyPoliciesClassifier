@@ -4,7 +4,7 @@ from os import listdir
 import nltk
 import pickle
 import numpy as np
-
+import pandas as pd
 
 def sentence_serialization(sentence, word2idx, lower_case = True):
     """ 
@@ -181,11 +181,11 @@ def get_glove_dicts(path, dims, read = False):
 
                 word2idx[word] = idx
 
-                idx += 1
-
                 vector = np.array(split_line[1:]).astype(np.float)
 
                 vectors.append(vector)
+                
+                idx += 1
         
         word2vector = {w: vectors[word2idx[w]] for w in words}
 
@@ -278,7 +278,7 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
             
     return (weights_matrix, word2idx)
 
-def process_dataset(path, word2idx, labels, read = False):
+def process_dataset(labels, word2idx, read = False):
     """
     
     This function process all the privacy policy files and transforms all the segments into lists of integers. It also 
@@ -298,17 +298,25 @@ def process_dataset(path, word2idx, labels, read = False):
     
     """
     
-    files = [f for f in listdir(path) if isfile(join(path, f))]
+    input_path = "agg_data" 
+    
+    files = [f for f in listdir(input_path) if isfile(join(input_path, f))]
     
     files.remove(".keep")
+    
+    labels_file = open("labels.pkl","rb")
+        
+    labels = pickle.load(labels_file)
+        
+    labels_file.close()
     
     all_files = True
     
     for f in files:
         
-        path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".csv","_sentence_matrix.pkl")
+        path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".pkl","_sentence_matrix.pkl")
         
-        path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".csv","_labels_matrix.pkl")
+        path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".pkl","_labels_matrix.pkl")
         
         all_files = all_files and isfile(path_sentence_matrices) and isfile(path_labels_matrices)
     
@@ -352,44 +360,114 @@ def process_dataset(path, word2idx, labels, read = False):
 
         for f in files:   
 
-            file_path = join(path,f)
+            file_path = join(input_path,f)
 
             sentence_matrix = list()
 
             labels_matrix = list()
 
-            opened_file = open(file_path,'r')
+            dataframe_file = open(file_path,'rb')
+            
+            opened_dataframe = pickle.load(dataframe_file)
+            
+            dataframe_file.close()
 
-            for line in opened_file:
+            for index, row in opened_dataframe.iterrows():
 
-                split_line = line.split('","')
+                segment = row["segment"]
 
-                sentence = split_line[1]
+                label = row["label"]
 
-                label = split_line[2].replace('"',"").replace('\n',"")
+                sentence_matrix.append(sentence_serialization(segment, word2idx))
 
-                sentence_matrix.append(sentence_serialization(sentence, word2idx))
-
-                labels_matrix.append(label_to_vector(label, labels))
+                labels_matrix.append(label)
                 
-                path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".csv","_sentence_matrix.pkl")
-        
-                path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".csv","_labels_matrix.pkl")
+            path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".csv","_sentence_matrix.pkl")
 
-                f1 = open(path_sentence_matrices, "wb")
+            path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".csv","_labels_matrix.pkl")
 
-                pickle.dump(sentence_matrix, f1)
+            output_file1 = open(path_sentence_matrices, "wb")
 
-                f1.close()
+            pickle.dump(sentence_matrix, output_file1)
 
-                f2 = open(path_labels_matrices, "wb")
+            output_file1.close()
 
-                pickle.dump(labels_matrix, f2)
+            output_file2 = open(path_labels_matrices, "wb")
 
-                f2.close()
+            pickle.dump(labels_matrix, output_file2)
+
+            output_file2.close()
 
             sentence_matrices.append(sentence_matrix)
 
             labels_matrices.append(labels_matrix)
                     
     return (sentence_matrices, labels_matrices) 
+
+def get_aggregated_data(read = False):
+    
+    """
+    
+    This function processes raw_data and aggregates all the segments labels. Places all the files in the agg_data folder. 
+    
+    Args:
+        read: boolean, if set to true it will read the data from agg_data folder as long as all the files are found inside the 
+        folder.
+   Returns:
+       Nothing.
+    
+    """
+    
+    
+    input_path = "raw_data"
+    
+    output_path = "agg_data"
+    
+    labels_file = open("labels.pkl","rb")
+        
+    labels_dict = pickle.load(labels_file)
+        
+    labels_file.close() 
+    
+    files = [f for f in listdir(input_path) if isfile(join(input_path, f))]
+    
+    files.remove(".keep")
+    
+    all_files = True
+    
+    for f in files:
+        
+        path_dataframes = join(output_path,f.replace(".csv",".pkl"))
+        
+        all_files = all_files and isfile(path_dataframes)
+        
+    print(all_files)
+        
+    if all_files == True and read == True:
+        
+        print("Files are already in agg_data/")
+        
+    else:
+    
+        print("Processing dataset ...")
+        
+        for f in files:
+
+            data = pd.read_csv(join(input_path,f), names = ["idx","segment","label"])
+
+            data['label'] = data['label'].apply(lambda x: label_to_vector(x, labels_dict))
+
+            labels_data = data[['idx','label']]
+
+            labels = labels_data.groupby("idx").sum()
+
+            segments = data[['idx','segment']].set_index('idx').drop_duplicates()
+
+            result = pd.merge(labels, segments, left_index=True, right_index=True)
+
+            output_file = file(join(output_path, f).replace(".csv",".pkl"),"wb")
+
+            pickle.dump(result,output_file)
+
+            output_file.close()
+            

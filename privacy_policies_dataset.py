@@ -36,7 +36,7 @@ class PrivacyPoliciesDataset(Dataset):
 
         labels_list = []
 
-        files_matrices, files_labels = dp.process_dataset("raw_data", word2idx, labels, True)
+        files_matrices, files_labels = dp.process_dataset("raw_data", word2idx, labels)
 
         for segments_matrix in files_matrices:
 
