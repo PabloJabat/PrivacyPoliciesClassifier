@@ -33,29 +33,53 @@ class PrivacyPoliciesDataset(Dataset):
     
     def resize_segments(self, clearance = 10):
     
+        same_size = True
+        
         maximun_len = 0
+              
+        segments_iterator = iter(self.segments_list)
+        
+        prev_length = len(segments_iterator.next())
 
-        for segment in self.segments_list:
+        for segment in segments_iterator:
 
+            same_size = same_size and (len(segment) == prev_length)
+            
             if len(segment) > maximun_len:
 
                 maximun_len = len(segment)
+                
+            prev_length = len(segment)            
 
-        maximun_len += clearance
+        if same_size:
+            
+            print("All segments already have the same size. Size: " + str(maximun_len))
+            
+        else:
+            
+            segments_length = clearance + maximun_len
+            
+            print("Resizing segments (filling with zeros). Target size: " + str(segments_length))
+        
+            for i, segment in enumerate(self.segments_list):
 
+                array = segment.numpy()
+
+                zeros_to_prepend = (segments_length - len(array))/2
+
+                zeros_to_append = segments_length - len(array) - zeros_to_prepend
+
+                resized_array = np.append(np.zeros(zeros_to_prepend), array)
+
+                resized_array = np.append(resized_array, np.zeros(zeros_to_append))
+
+                self.segments_list[i] = torch.tensor(resized_array, dtype = torch.int64)
+                
+    def expand_dimensions(self):
+        
         for i, segment in enumerate(self.segments_list):
-
-            array = segment.numpy()
-
-            zeros_to_prepend = (maximun_len - len(array))/2
-
-            zeros_to_append = maximun_len - len(array) - zeros_to_prepend
-
-            resized_array = np.append(np.zeros(zeros_to_prepend), array)
-
-            resized_array = np.append(resized_array, np.zeros(zeros_to_append))
-
-            self.segments_list[i] = resized_array
+            
+            self.segments_list[i] = segment.unsqueeze(0)
     
     def unpack_segments(self, word2idx, labels):
 
@@ -63,7 +87,7 @@ class PrivacyPoliciesDataset(Dataset):
 
         labels_list = []
 
-        files_matrices, files_labels = dp.process_dataset("raw_data", word2idx, labels)
+        files_matrices, files_labels = dp.process_dataset(labels, word2idx)
 
         for segments_matrix in files_matrices:
 
@@ -75,6 +99,35 @@ class PrivacyPoliciesDataset(Dataset):
 
             for segment_label in file_labels:
 
-                labels_list.append(segment_label)
+                labels_list.append(torch.tensor(segment_label))
 
         return (segments_list, labels_list) 
+    
+    def group_samples(self):
+        
+        same_size = True
+        
+        segments_iterator = iter(self.segments_list)
+        
+        prev_length = len(segments_iterator.next())
+
+        for segment in segments_iterator:
+
+            same_size = same_size and (len(segment) == prev_length)
+                
+            prev_length = len(segment)            
+
+        if not same_size:
+            
+            print("Can't group samples into one Tensor. All samples must have the same size.")
+            
+            print("Call resize_segments on dataset.")
+            
+        else: 
+            
+            print("Grouping samples into one Tensor")
+            
+            self.segments_list = torch.stack(self.segments_list)
+            
+            self.labels_list = torch.stack(self.labels_list)
+                   
