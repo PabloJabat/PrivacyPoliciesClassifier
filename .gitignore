@@ -5,7 +5,9 @@
 *.pkl
 *.model
 agg_data/*
-raw_data/*
+agg_data/*
+raw_data/test/*
+raw_data/train/*
 processed_data/sentence_matrices/*
 processed_data/labels_matrices/*
 glove.6B/*

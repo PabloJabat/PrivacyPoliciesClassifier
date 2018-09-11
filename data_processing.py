@@ -79,14 +79,18 @@ def get_tokens(path, read = False):
         print("Processing dataset ...")
     
         dictionary = set()
+        
+        train_path = join(path,"train")
+        
+        test_path = join(path,"test")
 
-        files = [f for f in listdir(path) if isfile(join(path, f))]
+        files = [join(train_path, f) for f in listdir(train_path) if isfile(join(train_path, f))]
 
+        files.extend([join(test_path, f) for f in listdir(test_path) if isfile(join(test_path, f))])
+        
         for f in files:
 
-            file_path = join(path, f)
-
-            opened_file = open(file_path,'r')
+            opened_file = open(f,'r')
 
             for i, line in enumerate(opened_file):
 
