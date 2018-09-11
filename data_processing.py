@@ -52,9 +52,11 @@ def sentence_serialization(sentence, word2idx, lower_case = True):
 def get_tokens(path, read = False):
     """
     
-    Checks all the files in filespath and returns all a set of all the words found in the files. The function will
-    ignore all the folders inside filespath automatically. We set all the words to be lower case. The function will
-    check if the a file with all the tokens is available. In that case this function will be much faster. 
+    Checks all the files in filespath and returns a set of all the words found in the files. The path has to have tow folders, 
+    one called train with all the files meant for training the NN and another called test with all the files that will be used 
+    for testing. The function will ignore all the folders inside filespath automatically. We set all the words to be lower 
+    case. The function will check if the a file with all the tokens is available. In that case this function will be much 
+    faster. 
     
     Args:
         filespath: string, path to the folder with all the files containing the words that we want to extract.
@@ -411,7 +413,7 @@ def process_dataset(labels, word2idx, read = False):
                     
     return (sentence_matrices, labels_matrices) 
 
-def get_aggregated_data(read = False):
+def aggregate_data(read = False):
     
     """
     
@@ -423,43 +425,45 @@ def get_aggregated_data(read = False):
    Returns:
        Nothing.
     
-    """  
+    """ 
     
-    input_path = "raw_data"
+    """
     
-    output_path = "agg_data"
+    Helper functions
     
-    labels_file = open("labels.pkl","rb")
-        
-    labels_dict = pickle.load(labels_file)
-        
-    labels_file.close() 
+    """
     
-    files = [f for f in listdir(input_path) if isfile(join(input_path, f))]
+    def are_files_in(folder):
+        
+        all_files = True
+        
+        folder_input_path = join(input_path, folder)
+        
+        folder_output_path = join(output_path, folder)
+        
+        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+        
+        files.remove(".keep")
+        
+        for f in files:       
+        
+            path_dataframes = join(folder_output_path,f.replace(".csv",".pkl"))
+
+            all_files = all_files and isfile(path_dataframes)
+            
+        return all_files
     
-    files.remove(".keep")
-    
-    all_files = True
-    
-    for f in files:
+    def aggregate_files_in(folder):
         
-        path_dataframes = join(output_path,f.replace(".csv",".pkl"))
+        folder_input_path = join(input_path, folder)
         
-        all_files = all_files and isfile(path_dataframes)
+        folder_output_path = join(output_path, folder)
         
-    print(all_files)
-        
-    if all_files == True and read == True:
-        
-        print("Files are already in agg_data/")
-        
-    else:
-    
-        print("Processing dataset ...")
+        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
         
         for f in files:
 
-            data = pd.read_csv(join(input_path,f), names = ["idx","segment","label"])
+            data = pd.read_csv(join(folder_input_path,f), names = ["idx","segment","label"])
 
             data['label'] = data['label'].apply(lambda x: label_to_vector(x, labels_dict))
 
@@ -471,9 +475,39 @@ def get_aggregated_data(read = False):
 
             result = pd.merge(labels, segments, left_index=True, right_index=True)
 
-            output_file = file(join(output_path, f).replace(".csv",".pkl"),"wb")
+            output_file = file(join(folder_output_path, f).replace(".csv",".pkl"),"wb")
 
-            pickle.dump(result,output_file)
+            pickle.dump(result, output_file)
 
             output_file.close()
+        
+    """
+    
+    main code of aggregate_data
+    
+    """
+    
+    input_path = "raw_data"
+    
+    output_path = "agg_data"
+    
+    labels_file = open("labels.pkl","rb")
+        
+    labels_dict = pickle.load(labels_file)
+        
+    labels_file.close() 
+        
+    all_files = are_files_in("test") and are_files_in("train")
+            
+    if all_files == True and read == True:
+        
+        print("Files are already in agg_data/")
+        
+    else:
+    
+        print("Processing dataset ...")
+        
+        aggregate_files_in("train")
+        
+        aggregate_files_in("test")        
             

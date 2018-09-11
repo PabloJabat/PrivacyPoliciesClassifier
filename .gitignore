@@ -4,8 +4,8 @@
 *.pyc
 *.pkl
 *.model
-agg_data/*
-agg_data/*
+agg_data/test/*
+agg_data/train/*
 raw_data/test/*
 raw_data/train/*
 processed_data/sentence_matrices/*
