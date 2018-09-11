@@ -284,8 +284,9 @@ def process_dataset(labels, word2idx, read = False):
     """
     
     This function process all the privacy policy files and transforms all the segments into lists of integers. It also 
-    transforms all the labels into a list of 0s except in one position where we will find a 1. It will also place .pkl files 
-    into the processed_data folder so that we can load the data from there instead of having to process the whole dataset.
+    transforms all the labels into a list of 0s except in the positions associated with the labels in which we will find 1s
+    where we will find a 1. It will also place .pkl files into the processed_data folder so that we can load the data from 
+    there instead of having to process the whole dataset.
     
     Args:
         path: string, path where all the files we want to process are located (all the privacy policies).
@@ -418,8 +419,7 @@ def get_aggregated_data(read = False):
    Returns:
        Nothing.
     
-    """
-    
+    """  
     
     input_path = "raw_data"
     
