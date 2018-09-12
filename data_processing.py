@@ -286,7 +286,7 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
             
     return (weights_matrix, word2idx)
 
-def process_dataset(labels, word2idx, read = False):
+def process_dataset(folder, labels, word2idx, read = False):
     """
     
     This function process all the privacy policy files and transforms all the segments into lists of integers. It also 
@@ -307,31 +307,45 @@ def process_dataset(labels, word2idx, read = False):
     
     """
     
-    input_path = "agg_data" 
+    """
     
-    files = [f for f in listdir(input_path) if isfile(join(input_path, f))]
+    Helper functions
     
-    files.remove(".keep")
+    """
     
-    labels_file = open("labels.pkl","rb")
+    def are_files_in(folder):       
         
-    labels = pickle.load(labels_file)
+        folder_output_path = join(output_path, folder)
         
-    labels_file.close()
+        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+        
+        files.remove(".keep")
+
+        all_files = all([isfile(join(folder_output_path,f)) for f in files])       
+
+        return all_files
     
-    all_files = True
+    def pickle_matrix(matrix, path):
+        
+        output_file = open(path,"wb")
+
+        pickle.dump(matrix, output_file)
+
+        output_file.close()
     
-    for f in files:
+    def unpickle_matrix(path):
         
-        path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".pkl","_sentence_matrix.pkl")
+        input_file = open(path,"rb")
+
+        matrix = pickle.load(input_file)
+
+        input_file.close()
         
-        path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".pkl","_labels_matrix.pkl")
-        
-        all_files = all_files and isfile(path_sentence_matrices) and isfile(path_labels_matrices)
+        return matrix
     
-    if all_files == True and read == True:
+    def load():
         
-        print("Loading from folders processed_data/sentence_matrices/ and processed_data/labels_matrices/")
+        print("Loading from processed_data/")
         
         sentence_matrices = list()
 
@@ -339,27 +353,21 @@ def process_dataset(labels, word2idx, read = False):
 
         for f in files:
             
-            path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".csv","_sentence_matrix.pkl")
+            path_sentence_matrices = join(folder_output_path, subfolders[0])
         
-            path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".csv","_labels_matrix.pkl")
+            path_labels_matrices = join(folder_output_path, subfolders[1])
+
+            sentence_matrix = unpickle_matrix(join(path_sentence_matrices, f.replace(".csv",".pkl")))
             
-            input_file1 = open(path_sentence_matrices,"rb")
+            labels_matrix = unpickle_matrix(join(path_labels_matrices, f.replace(".csv",".pkl")))
             
-            f_sentence_matrix = pickle.load(input_file1)
+            sentence_matrices.append(sentence_matrix)
             
-            input_file1.close()
+            labels_matrices.append(labels_matrix)
             
-            input_file2 = open(path_sentence_matrices,"rb")
-            
-            f_labels_matrix = pickle.load(input_file2)
-            
-            input_file2.close()
-            
-            sentence_matrices.append(f_sentence_matrix)
-            
-            labels_matrices.append(f_labels_matrix)
-        
-    else:
+        return sentence_matrices, labels_matrices
+    
+    def process():
         
         print("Processing dataset ...")
         
@@ -369,7 +377,7 @@ def process_dataset(labels, word2idx, read = False):
 
         for f in files:   
 
-            file_path = join(input_path,f)
+            file_path = join(folder_input_path,f)
 
             sentence_matrix = list()
 
@@ -391,30 +399,61 @@ def process_dataset(labels, word2idx, read = False):
 
                 labels_matrix.append(label)
                 
-            path_sentence_matrices = "processed_data/sentence_matrices/" + f.replace(".csv","_sentence_matrix.pkl")
+            path_sentence_matrices = join(folder_output_path, join(subfolders[0], f))
 
-            path_labels_matrices = "processed_data/labels_matrices/" + f.replace(".csv","_labels_matrix.pkl")
+            path_labels_matrices = join(folder_output_path, join(subfolders[1], f))
 
-            output_file1 = open(path_sentence_matrices, "wb")
+            pickle_matrix(sentence_matrix, path_sentence_matrices)
 
-            pickle.dump(sentence_matrix, output_file1)
-
-            output_file1.close()
-
-            output_file2 = open(path_labels_matrices, "wb")
-
-            pickle.dump(labels_matrix, output_file2)
-
-            output_file2.close()
-
+            pickle_matrix(labels_matrix, path_labels_matrices)
+         
             sentence_matrices.append(sentence_matrix)
 
             labels_matrices.append(labels_matrix)
+            
+        return sentence_matrices, labels_matrices
+    
+    """
+    
+    main code of process_dataset
+    
+    """
+    
+    input_path = "agg_data"
+    
+    output_path = "processed_data"
+    
+    folder_input_path = join(input_path,folder)
+    
+    folder_output_path = join(output_path,folder)
+    
+    subfolders = ["sentence_matrices", "labels_matrices"]
+    
+    tests = [are_files_in(join(folder, subfolder)) for subfolder in subfolders]
+    
+    all_files = all(tests)
+    
+    labels_file = open("labels.pkl","rb")
+        
+    labels = pickle.load(labels_file)
+        
+    labels_file.close()
+                    
+    files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+    
+    files.remove(".keep")
+    
+    if all_files == True and read == True:
+        
+        sentence_matrices, labels_matrices = load()
+        
+    else:
+        
+        sentence_matrices, labels_matrices = process()
                     
     return (sentence_matrices, labels_matrices) 
 
-def aggregate_data(read = False):
-    
+def aggregate_data(read = False):    
     """
     
     This function processes raw_data and aggregates all the segments labels. Places all the files in the agg_data folder. 
