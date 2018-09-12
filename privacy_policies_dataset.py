@@ -5,11 +5,13 @@ from torch.utils.data import Dataset
 
 class PrivacyPoliciesDataset(Dataset):  
     
-    def __init__(self, path, word2idx, labels):
+    def __init__(self, folder, path, word2idx, labels, read = False):
+        
+        self.folder = folder
        
         self.path = path
         
-        self.segments_list, self.labels_list = self.unpack_segments(word2idx, labels)
+        self.segments_list, self.labels_list = self.unpack_segments(self.folder, word2idx, labels, read)
         
     def __len__(self):
         
@@ -81,13 +83,13 @@ class PrivacyPoliciesDataset(Dataset):
             
             self.segments_list[i] = segment.unsqueeze(0)
     
-    def unpack_segments(self, word2idx, labels):
+    def unpack_segments(self, folder, word2idx, labels, read):
 
         segments_list = []
 
         labels_list = []
 
-        files_matrices, files_labels = dp.process_dataset(labels, word2idx)
+        files_matrices, files_labels = dp.process_dataset(folder ,labels, word2idx, read)
 
         for segments_matrix in files_matrices:
 
