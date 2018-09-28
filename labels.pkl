@@ -1,32 +1,29 @@
 (dp0
-S'First Party Collection/Use'
+S'Data Retention'
 p1
-I0
-sS'Data Retention'
-p2
 I3
-sS'User Choice/Control'
+sS'First Party Collection/Use'
+p2
+I0
+sS'Third Party Sharing/Collection'
 p3
-I9
+I1
 sS'Policy Change'
 p4
 I7
-sS'Do Not Track'
+sS'User Choice/Control'
 p5
+I8
+sS'Do Not Track'
+p6
 I6
 sS'Data Security'
-p6
-I4
-sS'Third Party Sharing/Collection'
 p7
-I1
+I4
 sS'International and Specific Audiences'
 p8
 I5
 sS'User Access, Edit and Deletion'
 p9
 I2
-sS'Other'
-p10
-I8
 s.
