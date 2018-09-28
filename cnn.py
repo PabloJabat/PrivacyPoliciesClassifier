@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import SGD
+import sys
+import time
 
 class CNN(nn.Module):    
     """
@@ -75,7 +77,7 @@ class CNN(nn.Module):
         
         return x
 
-def train_cnn(model, train_dataloader, lr = 0.02, epochs = 100, momentum = 0.9):
+def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0.9):
     """
     
     This function trains a CNN model using gradient descent with the posibility of using momentum. 
@@ -84,24 +86,22 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs = 100, momentum = 0.9):
         model: cnn.CNN, an instance of a model of the class cnn.CNN 
         train_dataloader: Dataloader, Dataloader instance built using PrivacyPoliciesDataset instance
         lr: double, learning rate that we want to use in the learning algorithm
-        epochs: integer, number of epochs
+        epochs_num: integer, number of epochs
         momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm
     
-    """
+    Returns:
+        epochs: list, list containing all the epochs
+        losses: list, list containing the loss at the beginning of each epoch
     
-    input = train_dataset.segments_list
+    """
 
-    target = train_dataset.labels_list.float()
-
-    optimizer = SGD(model_all.parameters(), lr = lr, momentum = momentum)
+    optimizer = SGD(model.parameters(), lr = lr, momentum = momentum)
 
     criterion = nn.BCELoss()
 
     losses = []
 
     epochs = []
-
-    epochs_num = 500
 
     start = time.time()
 
@@ -115,7 +115,7 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs = 100, momentum = 0.9):
 
             target = sample_batched[1].float()
 
-            model_all.zero_grad()
+            model.zero_grad()
 
             output = model(input)
 
@@ -131,9 +131,9 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs = 100, momentum = 0.9):
 
         remaining_time_corrected = remaining_time / (1 - (0.9 ** (epoch + 1)))
 
-        epoch_str = "epoch: " + str(epoch)
+        epoch_str = "last epoch finished: " + str(epoch)
 
-        progress_str = "progress: " + str(epoch * 100 / epochs_num) + "%"
+        progress_str = "progress: " + str((epoch + 1) * 100 / epochs_num) + "%"
 
         time_str = "time: " + str(remaining_time_corrected / 60) + " mins"
 
@@ -146,3 +146,5 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs = 100, momentum = 0.9):
         epochs.append(epoch)
 
     print("\n" + "Training completed. Total training time: " + str(round((end - start) / 60, 2)) + " mins")
+    
+    return epochs, losses
