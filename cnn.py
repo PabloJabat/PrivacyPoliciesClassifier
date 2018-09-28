@@ -1,0 +1,148 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.optim import SGD
+
+class CNN(nn.Module):    
+    """
+    
+    Convolutional Neural Model used for training the models. The total number of kernels that will be used in this
+    CNN is Co * len(Ks). 
+    
+    Args:
+        weights_matrix: numpy.ndarray, the shape of this n-dimensional array must be (words, dims) were words is
+        the number of words in the vocabulary and dims is the dimensionality of the word embeddings.
+        Co: integer, stands for channels out and it is the number of kernels of the same size that will be used.
+        Hu: integer, stands for number of hidden units in the hidden layer.
+        C: integer, number of units in the last layer (number of classes)
+        Ks: list, list of integers specifying the size of the kernels to be used. 
+     
+    """
+    
+    def __init__(self, weights_matrix, Co, Hu, C, Ks):
+        
+        super(CNN, self).__init__()
+        
+        num_embeddings, embeddings_dim = weights_matrix.shape
+        
+        self.Co = Co
+        
+        self.Hu = Hu
+        
+        self.C = C
+        
+        self.Ks = Ks
+        
+        self.embedding = nn.Embedding.from_pretrained(torch.tensor(weights_matrix).float())       
+                       
+        self.convolutions = nn.ModuleList([nn.Conv2d(1,self.Co,(k, embeddings_dim)) for k in Ks])
+            
+        self.relu = nn.ReLU()
+        
+        self.linear1 = nn.Linear(self.Co * len(self.Ks), self.Hu)
+        
+        self.linear2 = nn.Linear(self.Hu, self.C)
+        
+        self.sigmoid = nn.Sigmoid()
+    
+    def forward(self,x):
+        
+        #size(N,1,length) to size(N,1,length,dims)
+        
+        x = self.embedding(x)
+        
+        #size(N,1,length,dims) to size(N,1,length)
+        
+        x = [self.relu(conv(x)).squeeze(3) for conv in self.convolutions]
+        
+        #size(N,1,length) to (N, Co * len(Ks))
+        
+        x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]
+        
+        x = torch.cat(x,1)
+        
+        #size(N, Co * len(Ks)) to size(N, Hu)
+        
+        x = self.linear1(x)
+        
+        x = self.relu(x)
+        
+        #size(N, Hu) to size(N, C)
+        
+        x = self.linear2(x)
+        
+        x = self.sigmoid(x)
+        
+        return x
+
+def train_cnn(model, train_dataloader, lr = 0.02, epochs = 100, momentum = 0.9):
+    """
+    
+    This function trains a CNN model using gradient descent with the posibility of using momentum. 
+    
+    Args:
+        model: cnn.CNN, an instance of a model of the class cnn.CNN 
+        train_dataloader: Dataloader, Dataloader instance built using PrivacyPoliciesDataset instance
+        lr: double, learning rate that we want to use in the learning algorithm
+        epochs: integer, number of epochs
+        momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm
+    
+    """
+    
+    input = train_dataset.segments_list
+
+    target = train_dataset.labels_list.float()
+
+    optimizer = SGD(model_all.parameters(), lr = lr, momentum = momentum)
+
+    criterion = nn.BCELoss()
+
+    losses = []
+
+    epochs = []
+
+    epochs_num = 500
+
+    start = time.time()
+
+    remaining_time = 0
+
+    for epoch in range(epochs_num):
+
+        for i_batch, sample_batched in enumerate(train_dataloader):
+
+            input = sample_batched[0]
+
+            target = sample_batched[1].float()
+
+            model_all.zero_grad()
+
+            output = model(input)
+
+            loss = criterion(output, target)
+
+            loss.backward()
+
+            optimizer.step()
+
+        end = time.time()
+
+        remaining_time = remaining_time * 0.90 + ((end - start) * (epochs_num - epoch + 1) / (epoch + 1)) * 0.1
+
+        remaining_time_corrected = remaining_time / (1 - (0.9 ** (epoch + 1)))
+
+        epoch_str = "epoch: " + str(epoch)
+
+        progress_str = "progress: " + str(epoch * 100 / epochs_num) + "%"
+
+        time_str = "time: " + str(remaining_time_corrected / 60) + " mins"
+
+        sys.stdout.write("\r" + epoch_str + " -- " + progress_str + " -- " + time_str)
+
+        sys.stdout.flush()
+
+        losses.append(loss.item())
+
+        epochs.append(epoch)
+
+    print("\n" + "Training completed. Total training time: " + str(round((end - start) / 60, 2)) + " mins")
