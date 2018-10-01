@@ -87,9 +87,13 @@ def get_tokens(path, read = False):
         test_path = join(path,"test")
 
         files = [join(train_path, f) for f in listdir(train_path) if isfile(join(train_path, f))]
+        
+        files.remove(join(train_path,".keep"))
 
         files.extend([join(test_path, f) for f in listdir(test_path) if isfile(join(test_path, f))])
         
+        files.remove(join(test_path,".keep"))
+                
         for f in files:
 
             opened_file = open(f,'r')
@@ -119,15 +123,21 @@ def label_to_vector(label, labels):
         label: string, label that we want to transform into a vector.
         labels: dictionary, dictionary with the labels as the keys and indexes as the values.
     Returns:
-        vector: np.array, 1-D array of lenght 10.
+        vector: np.array, 1-D array of lenght 9.
         
     """
     
-    vector = np.zeros((10))
+    vector = np.zeros((9))
     
-    index = labels[label]
+    try:
     
-    vector[index] = 1
+        index = labels[label]
+    
+        vector[index] = 1
+        
+    except KeyError:
+        
+        vector = np.zeros((9))
     
     return vector
 
@@ -147,7 +157,7 @@ def get_glove_dicts(path, dims, read = False):
     
     """
     
-    if isfile("word2vector.pkl") and isfile("word2idx.pkl") and read == True:
+    if isfile("word2vector.pkl") and isfile("word2idx_globe.pkl") and read == True:
         
         print("Loading from files word2vector.pkl and word2idx.pkl")
 
@@ -157,7 +167,7 @@ def get_glove_dicts(path, dims, read = False):
         
         input_file1.close()
 
-        input_file2 = open("word2idx.pkl","rb")
+        input_file2 = open("word2idx_globe.pkl","rb")
         
         word2idx = pickle.load(input_file2)
         
@@ -201,7 +211,7 @@ def get_glove_dicts(path, dims, read = False):
 
         output_file1.close()
 
-        output_file2 = open("word2idx.pkl","wb")
+        output_file2 = open("word2idx_globe.pkl","wb")
 
         pickle.dump(word2idx, output_file2)
 
@@ -433,12 +443,6 @@ def process_dataset(folder, labels, word2idx, read = False):
     
     all_files = all(tests)
     
-    labels_file = open("labels.pkl","rb")
-        
-    labels = pickle.load(labels_file)
-        
-    labels_file.close()
-                    
     files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
     
     files.remove(".keep")

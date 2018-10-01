@@ -4,6 +4,7 @@
 *.pyc
 *.pkl
 *.model
+*.ipynb
 agg_data/test/*
 agg_data/train/*
 raw_data/test/*
