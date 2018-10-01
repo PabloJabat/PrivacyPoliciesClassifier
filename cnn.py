@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.optim import SGD
 import sys
 import time
+import pickle
 
 class CNN(nn.Module):    
     """
@@ -21,11 +22,17 @@ class CNN(nn.Module):
      
     """
     
-    def __init__(self, weights_matrix, Co, Hu, C, Ks):
+    def __init__(self, vocab_size, emb_dim, Co, Hu, C, Ks, name = ''):
         
         super(CNN, self).__init__()
         
-        num_embeddings, embeddings_dim = weights_matrix.shape
+        self.num_embeddings, 
+        
+        self.embeddings_dim = weights_matrix.shape
+        
+        self.weights_matrix = weights_matrix
+        
+        self.cnn_name = 'cnn_' + '_' + str(emb_dim) + str(Co) + '_' + str(Hu) + '_' + str(C) + '_' + str(Ks) + '_' + name
         
         self.Co = Co
         
@@ -35,7 +42,7 @@ class CNN(nn.Module):
         
         self.Ks = Ks
         
-        self.embedding = nn.Embedding.from_pretrained(torch.tensor(weights_matrix).float())       
+        self.embedding = nn.Embedding(vocab_size, emb_dim)       
                        
         self.convolutions = nn.ModuleList([nn.Conv2d(1,self.Co,(k, embeddings_dim)) for k in Ks])
             
@@ -76,6 +83,18 @@ class CNN(nn.Module):
         x = self.sigmoid(x)
         
         return x
+    
+    def load_embeddings(self, weights):
+        
+        self.embedding.from_pretrained()
+    
+    def save_cnn_params(self):
+        
+        cnn_params = {'weights_matrix': self.weights_matrix, 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
+        
+        output_file = open(self.name + ".pkl", "wb")
+        
+        pickle.dump(cnn_params, output_file)
 
 def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0.9):
     """
