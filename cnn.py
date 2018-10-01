@@ -26,13 +26,11 @@ class CNN(nn.Module):
         
         super(CNN, self).__init__()
         
-        self.num_embeddings, 
+        self.num_embeddings = vocab_size
         
-        self.embeddings_dim = weights_matrix.shape
+        self.embeddings_dim = emb_dim
         
-        self.weights_matrix = weights_matrix
-        
-        self.cnn_name = 'cnn_' + '_' + str(emb_dim) + str(Co) + '_' + str(Hu) + '_' + str(C) + '_' + str(Ks) + '_' + name
+        self.cnn_name = 'cnn_' + str(emb_dim) + str(Co) + '_' + str(Hu) + '_' + str(C) + '_' + str(Ks) + '_' + name
         
         self.Co = Co
         
@@ -42,9 +40,9 @@ class CNN(nn.Module):
         
         self.Ks = Ks
         
-        self.embedding = nn.Embedding(vocab_size, emb_dim)       
+        self.embedding = nn.Embedding(self.num_embeddings, self.embeddings_dim)       
                        
-        self.convolutions = nn.ModuleList([nn.Conv2d(1,self.Co,(k, embeddings_dim)) for k in Ks])
+        self.convolutions = nn.ModuleList([nn.Conv2d(1,self.Co,(k, self.embeddings_dim)) for k in self.Ks])
             
         self.relu = nn.ReLU()
         
@@ -84,9 +82,9 @@ class CNN(nn.Module):
         
         return x
     
-    def load_embeddings(self, weights):
-        
-        self.embedding.from_pretrained()
+    def load_embeddings(self, weights_matrix):
+                
+        self.embedding = self.embedding.from_pretrained(torch.tensor(weights_matrix).float())
     
     def save_cnn_params(self):
         
