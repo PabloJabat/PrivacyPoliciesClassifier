@@ -82,7 +82,7 @@ class CNN(nn.Module):
         
         return x
     
-    def load_embeddings(self, weights_matrix):
+    def load_pretrained_embeddings(self, weights_matrix):
                 
         self.embedding = self.embedding.from_pretrained(torch.tensor(weights_matrix).float())
     
