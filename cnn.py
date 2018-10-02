@@ -88,9 +88,9 @@ class CNN(nn.Module):
     
     def save_cnn_params(self):
         
-        cnn_params = {'weights_matrix': self.weights_matrix, 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
+        cnn_params = {'vocab_size': self.num_embeddings,'emb_dim': self.embeddings_dim , 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
         
-        output_file = open(self.name + ".pkl", "wb")
+        output_file = open(self.name + "_params.pkl", "wb")
         
         pickle.dump(cnn_params, output_file)
 
