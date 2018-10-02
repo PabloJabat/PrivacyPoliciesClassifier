@@ -90,7 +90,7 @@ class CNN(nn.Module):
         
         cnn_params = {'vocab_size': self.num_embeddings,'emb_dim': self.embeddings_dim , 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
         
-        output_file = open(self.name + "_params.pkl", "wb")
+        output_file = open(self.cnn_name + "_params.pkl", "wb")
         
         pickle.dump(cnn_params, output_file)
 
