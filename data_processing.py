@@ -465,7 +465,7 @@ def aggregate_data(read = False):
     Args:
         read: boolean, if set to true it will read the data from agg_data folder as long as all the files are found inside the 
         folder.
-   Returns:
+    Returns:
        Nothing.
     
     """ 
@@ -553,4 +553,31 @@ def aggregate_data(read = False):
         aggregate_files_in("train")
         
         aggregate_files_in("test")        
+
+def get_absent_words(dictionary, word2vector):
+    """
+    
+    This function check if the words inside dictionary are present in word2vector which is a dictionary coming from a word
+    embedding.
+    
+    Args:
+        dictionary: set, set containing strings of words
+        word2vector: dictionary, the keys are the words and the values are the embeddings   
+    Returns:
+        absent_words: list, list containing all the words that weren't found in the word embeddings word2vector
+    
+    """
+
+    absent_words = []
+
+    for word in dictionary:
+
+        try:
+
+            word2vector[word]
+
+        except KeyError:
+
+            absent_words.append(word)
             
+    return absent_words

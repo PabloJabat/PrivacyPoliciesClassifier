@@ -79,6 +79,13 @@ class PrivacyPoliciesDataset(Dataset):
                 
     def expand_dimensions(self):
         
+        """
+        
+        This method transforms all the 1-dimensional tensors inside segments_list to 2-dimensional tensor. This is necessary
+        before calling group_samples and before using the dataset in a CNN. 
+        
+        """
+        
         for i, segment in enumerate(self.segments_list):
             
             self.segments_list[i] = segment.unsqueeze(0)

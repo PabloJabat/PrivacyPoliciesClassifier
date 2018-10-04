@@ -30,7 +30,7 @@ class CNN(nn.Module):
         
         self.embeddings_dim = emb_dim
         
-        self.cnn_name = 'cnn_' + str(emb_dim) + str(Co) + '_' + str(Hu) + '_' + str(C) + '_' + str(Ks) + '_' + name
+        self.cnn_name = 'cnn_' + str(emb_dim) + '_' + str(Co) + '_' + str(Hu) + '_' + str(C) + '_' + str(Ks) + '_' + name
         
         self.Co = Co
         
@@ -88,9 +88,9 @@ class CNN(nn.Module):
     
     def save_cnn_params(self):
         
-        cnn_params = {'weights_matrix': self.weights_matrix, 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
+        cnn_params = {'vocab_size': self.num_embeddings,'emb_dim': self.embeddings_dim , 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
         
-        output_file = open(self.name + ".pkl", "wb")
+        output_file = open(self.cnn_name + "_params.pkl", "wb")
         
         pickle.dump(cnn_params, output_file)
 
@@ -165,3 +165,77 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0
     print("\n" + "Training completed. Total training time: " + str(round((end - start) / 60, 2)) + " mins")
     
     return epochs, losses
+
+def f1_score(y_true, y_pred, threshold, dim = 0, eps = 1e-9):
+
+    """
+    
+    Computes the f1 score resulting from the comparison between y_true and y_pred after using the threshold set.
+    
+    Args: 
+        y_true: torch.tensor, 2-dimensional torch.tensor containing the true labels per record. The i-th row is the record i
+        whereas the j-th column is the label j.
+        y_pred: torch.tensor, 2-dimensional torch.tensor containing the probabilities assigned to each label. The i-th row is
+        the record i whereas the j-th column is the label j.
+        threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned to 
+        a record.
+        dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to set 
+        this parameter.
+        eps: double, it is just a very small value that avoids dividing by 0 when computing the precision and recall. 
+        
+    Returns:
+        f1: double, the resulting mean f1 score of all the labels (it will be a number between 0 and 1)
+        precision: double, the resulting mean precision of all the labels (it will be a number between 0 and 1)
+        recall: double, the resulting mean recall of all the labels (it will be a number between 0 and 1)
+    
+    """
+    
+    y_pred = torch.ge(y_pred.float(), threshold).float()
+    
+    y_true = y_true.float()
+
+    true_positive = (y_pred * y_true).sum(dim = dim)
+    
+    precision = true_positive.div(y_pred.sum(dim = dim).add(eps))
+    
+    recall = true_positive.div(y_true.sum(dim = dim).add(eps))
+    
+    f1 = torch.mean((precision * recall).div(precision + recall + eps) * 2)
+
+    return f1.item(), torch.mean(precision).item(), torch.mean(recall).item()
+
+def f1_score_per_label(y_true, y_pred, threshold, dim=0, eps=1e-9):
+    
+    """
+    Computes the f1 score per label resulting from the comparison between y_true and y_pred after using the threshold set.
+    
+    Args: 
+        y_true: torch.tensor, 2-dimensional torch.tensor containing the true labels per record. The i-th row is the record i
+        whereas the j-th column is the label j.
+        y_pred: torch.tensor, 2-dimensional torch.tensor containing the probabilities assigned to each label. The i-th row is
+        the record i whereas the j-th column is the label j.
+        threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned to 
+        a record.
+        dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to set 
+        this parameter.
+        eps: double, it is just a very small value that avoids dividing by 0 when computing the precision and recall.
+    
+    Returns:
+        f1: list, the resulting f1 score per label (it will be a number between 0 and 1)
+        precision: list, the resulting precision per label (it will be a number between 0 and 1)
+        recall: list, the resulting recall per label (it will be a number between 0 and 1)
+    """
+
+    y_pred = torch.ge(y_pred.float(), threshold).float()
+    
+    y_true = y_true.float()
+
+    true_positive = (y_pred * y_true).sum(dim=dim)
+    
+    precision = true_positive.div(y_pred.sum(dim=dim).add(eps))
+    
+    recall = true_positive.div(y_true.sum(dim=dim).add(eps))
+    
+    f1 = (precision * recall).div(precision + recall + eps) * 2
+
+    return f1, precision, recall
