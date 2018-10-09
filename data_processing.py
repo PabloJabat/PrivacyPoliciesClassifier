@@ -24,9 +24,9 @@ def get_number_segments(folder):
     
     for f in files:
 
-        with open(f) as f_opened:
+        with open(f, "rb") as f_opened:
 
-            number_segments += len(f_opened)
+            number_segments += len(pickle.load(f_opened))
             
     return number_segments
             
@@ -520,7 +520,7 @@ def aggregate_data(read = False, onefile = False):
             
         return all_files
     
-    def aggregate_files_in(folder, onefile = False):
+    def aggregate_files_in(folder):
         
         folder_input_path = join(input_path, folder)
         
@@ -542,7 +542,7 @@ def aggregate_data(read = False, onefile = False):
 
             result = pd.merge(labels, segments, left_index = True, right_index = True)
             
-            if onefile:
+            if folder == "all":
                 
                 all_results = pd.concat([result, all_results])
                 
@@ -558,9 +558,11 @@ def aggregate_data(read = False, onefile = False):
                 
         if onefile:
             
+            folder_output_path = "agg_data"
+            
             output_file = file(join(folder_output_path, "agg_data.pkl"),"wb")
 
-            pickle.dump(all_result, output_file)
+            pickle.dump(all_results, output_file)
 
             output_file.close()                       
         
@@ -582,7 +584,7 @@ def aggregate_data(read = False, onefile = False):
     
     if onefile:
         
-        onefile_exists = isfile(join(output_path, "agg_data.pkl")
+        onefile_exists = isfile(join(output_path, "agg_data.pkl"))
                                 
         if onefile_exists == True and read == True:
                                             
@@ -602,7 +604,7 @@ def aggregate_data(read = False, onefile = False):
         
             print("Files are already in agg_data/")
         
-        else if read == False:
+        else:
     
             print("Processing dataset ...")
 
