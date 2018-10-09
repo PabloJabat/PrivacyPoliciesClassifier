@@ -6,6 +6,30 @@ import pickle
 import numpy as np
 import pandas as pd
 
+def get_number_segments(folder):
+    """
+    
+    Computes the number of segments in the files inside the folder
+    
+    Args:
+        folder: string, path to the folder we want to examine
+    Returns:
+        number_segments: integer, number of segments inside the folder
+    
+    """
+    
+    number_segments = 0 
+    
+    files = [join(folder, f) for f in listdir(folder) if isfile(join(folder, f))]
+    
+    for f in files:
+
+        with open(f) as f_opened:
+
+            number_segments += len(f_opened)
+            
+    return number_segments
+            
 def sentence_serialization(sentence, word2idx, lower_case = True):
     """ 
     
@@ -457,7 +481,7 @@ def process_dataset(folder, labels, word2idx, read = False):
                     
     return (sentence_matrices, labels_matrices) 
 
-def aggregate_data(read = False):    
+def aggregate_data(read = False, onefile = False):    
     """
     
     This function processes raw_data and aggregates all the segments labels. Places all the files in the agg_data folder. 
@@ -496,13 +520,13 @@ def aggregate_data(read = False):
             
         return all_files
     
-    def aggregate_files_in(folder):
+    def aggregate_files_in(folder, onefile = False):
         
         folder_input_path = join(input_path, folder)
         
-        folder_output_path = join(output_path, folder)
-        
         files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+        
+        all_results = pd.DataFrame({'label' : [], 'segment' : []})
         
         for f in files:
 
@@ -516,13 +540,29 @@ def aggregate_data(read = False):
 
             segments = data[['idx','segment']].set_index('idx').drop_duplicates()
 
-            result = pd.merge(labels, segments, left_index=True, right_index=True)
+            result = pd.merge(labels, segments, left_index = True, right_index = True)
+            
+            if onefile:
+                
+                all_results = pd.concat([result, all_results])
+                
+            else:
+                        
+                folder_output_path = join(output_path, folder)
 
-            output_file = file(join(folder_output_path, f).replace(".csv",".pkl"),"wb")
+                output_file = file(join(folder_output_path, f).replace(".csv",".pkl"),"wb")
 
-            pickle.dump(result, output_file)
+                pickle.dump(result, output_file)
 
-            output_file.close()
+                output_file.close()
+                
+        if onefile:
+            
+            output_file = file(join(folder_output_path, "agg_data.pkl"),"wb")
+
+            pickle.dump(all_result, output_file)
+
+            output_file.close()                       
         
     """
     
@@ -538,21 +578,37 @@ def aggregate_data(read = False):
         
     labels_dict = pickle.load(labels_file)
         
-    labels_file.close() 
-        
-    all_files = are_files_in("test") and are_files_in("train")
-            
-    if all_files == True and read == True:
-        
-        print("Files are already in agg_data/")
-        
-    else:
+    labels_file.close()
     
-        print("Processing dataset ...")
+    if onefile:
         
-        aggregate_files_in("train")
+        onefile_exists = isfile(join(output_path, "agg_data.pkl")
+                                
+        if onefile_exists == True and read == True:
+                                            
+            print("agg_data.pkl are already in agg_data/")
+
+        else: 
         
-        aggregate_files_in("test")        
+            print("Processing dataset in one file ...")
+        
+            aggregate_files_in("all")
+
+    else:
+                                
+        all_files = are_files_in("test") and are_files_in("train")
+           
+        if all_files == True and read == True:
+        
+            print("Files are already in agg_data/")
+        
+        else if read == False:
+    
+            print("Processing dataset ...")
+
+            aggregate_files_in("train")
+
+            aggregate_files_in("test")
 
 def get_absent_words(dictionary, word2vector):
     """
