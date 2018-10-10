@@ -109,6 +109,8 @@ def get_tokens(path, read = False):
         train_path = join(path,"train")
         
         test_path = join(path,"test")
+        
+        validation_path = join(path,"validation")
 
         files = [join(train_path, f) for f in listdir(train_path) if isfile(join(train_path, f))]
         
@@ -117,6 +119,10 @@ def get_tokens(path, read = False):
         files.extend([join(test_path, f) for f in listdir(test_path) if isfile(join(test_path, f))])
         
         files.remove(join(test_path,".keep"))
+        
+        files.extend([join(validation_path, f) for f in listdir(validation_path) if isfile(join(validation_path, f))])
+        
+        files.remove(join(validation_path,".keep"))
                 
         for f in files:
 
@@ -457,29 +463,63 @@ def process_dataset(folder, labels, word2idx, read = False):
     
     output_path = "processed_data"
     
-    folder_input_path = join(input_path,folder)
-    
-    folder_output_path = join(output_path,folder)
-    
-    subfolders = ["sentence_matrices", "labels_matrices"]
-    
-    tests = [are_files_in(join(folder, subfolder)) for subfolder in subfolders]
-    
-    all_files = all(tests)
-    
-    files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
-    
-    files.remove(".keep")
-    
-    if all_files == True and read == True:
+    if folder == "all":
         
-        sentence_matrices, labels_matrices = load()
+        dataframe_file = open("agg_data/agg_data.pkl",'rb')
+             
+        opened_dataframe = pickle.load(dataframe_file)
+            
+        dataframe_file.close()
+        
+        sentence_matrices = list()
+
+        labels_matrices = list()
+        
+        for index, row in opened_dataframe.iterrows():
+
+            segment = row["segment"]
+
+            label = row["label"]
+
+            sentence_matrices.append(sentence_serialization(segment, word2idx))
+
+            labels_matrices.append(label)
+            
+        path_sentence_matrices = join(output_path, "all_sentence_matrices.pkl")
+
+        path_labels_matrices = join(output_path, "all_label_matrices.pkl")
+        
+        pickle_matrix(sentence_matrices, path_sentence_matrices)
+
+        pickle_matrix(sentence_matrices, path_labels_matrices)
+            
+        return sentence_matrices, labels_matrices               
         
     else:
-        
-        sentence_matrices, labels_matrices = process()
-                    
-    return (sentence_matrices, labels_matrices) 
+    
+        folder_input_path = join(input_path,folder)
+
+        folder_output_path = join(output_path,folder)
+
+        subfolders = ["sentence_matrices", "labels_matrices"]
+
+        tests = [are_files_in(join(folder, subfolder)) for subfolder in subfolders]
+
+        all_files = all(tests)
+
+        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+
+        files.remove(".keep")
+
+        if all_files == True and read == True:
+
+            sentence_matrices, labels_matrices = load()
+
+        else:
+
+            sentence_matrices, labels_matrices = process()
+
+        return (sentence_matrices, labels_matrices) 
 
 def aggregate_data(read = False, onefile = False):    
     """
@@ -490,7 +530,7 @@ def aggregate_data(read = False, onefile = False):
         read: boolean, if set to true it will read the data from agg_data folder as long as all the files are found inside the 
         folder.
     Returns:
-       Nothing.
+        Nothing.
     
     """ 
     
