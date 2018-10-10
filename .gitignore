@@ -1,10 +1,13 @@
 .ipynb_checkpoints
 .idea
+*.ods
 *.txt
 *.pyc
 *.pkl
 *.model
-*.ipynb
+*.pt
+*.png
+fastText-0.1.0
 agg_data/test/*
 agg_data/train/*
 raw_data/test/*
