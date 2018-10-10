@@ -22,7 +22,7 @@ class CNN(nn.Module):
      
     """
     
-    def __init__(self, vocab_size, emb_dim, Co, Hu, C, Ks, name = ''):
+    def __init__(self, vocab_size, emb_dim, Co, Hu, C, Ks, name = 'generic'):
         
         super(CNN, self).__init__()
         
