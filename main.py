@@ -4,28 +4,29 @@ import random
 import pickle
 
 print('Number of arguments:', len(sys.argv), 'arguments.')
+
 print('Argument List:', str(sys.argv))
 
 if __name__ == "__main__":
 
-	path = sys.argv[1]
+    path = sys.argv[1]
 
-	dims = sys.argv[2]
+    dims = sys.argv[2]
 
-	labels_file = open("labels.pkl","rb")
+    labels_file = open("labels.pkl","rb")
 
-	labels = pickle.load(labels_file)
+    labels = pickle.load(labels_file)
 
-	labels_file.close()
-    
-	tokens = dp.get_tokens("raw_data")
-    
-	print("Random samples: " + str(random.sample(tokens, 2)))
+    labels_file.close()
 
-	word2vector, word2idx = dp.get_glove_dicts(path, dims, True)
+    tokens = dp.get_tokens("raw_data")
 
-	weights_matrix, word2idx = dp.get_weight_matrix(tokens, word2vector, dims, True)
+    print("Random samples: " + str(random.sample(tokens, 2)))
 
-	sentence_matrices, labels_matrices = dp.process_dataset(path, word2idx, labels)
+    word2vector, word2idx = dp.get_glove_dicts(path, dims, True)
 
-	print("Program executed succesfully ...")
+    weights_matrix, word2idx = dp.get_weight_matrix(tokens, word2vector, dims, True)
+
+    sentence_matrices, labels_matrices = dp.process_dataset(path, word2idx, labels)
+
+    print("Program executed succesfully ...")
