@@ -88,13 +88,25 @@ class CNN(nn.Module):
     
     def save_cnn_params(self):
         
-        cnn_params = {'vocab_size': self.num_embeddings,'emb_dim': self.embeddings_dim , 'Co': self.Co, 'Hu': self.Hu, 'C': self.C, 'Ks': self.Ks}
+        cnn_params = {'vocab_size': self.num_embeddings,
+                      
+                      'emb_dim': self.embeddings_dim,
+                      
+                      'Co': self.Co,
+                      
+                      'Hu': self.Hu,
+                      
+                      'C': self.C,
+                      
+                      'Ks': self.Ks,
+                     
+                      'name': self.cnn_name}
         
         output_file = open(self.cnn_name + "_params.pkl", "wb")
         
         pickle.dump(cnn_params, output_file)
 
-def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0.9):
+def train_cnn(model, dataset, lr = 0.02, epochs_num = 100, batch_size = 40, momentum = 0.9):
     """
     
     This function trains a CNN model using gradient descent with the posibility of using momentum. 
@@ -104,8 +116,7 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0
         train_dataloader: Dataloader, Dataloader instance built using PrivacyPoliciesDataset instance
         lr: double, learning rate that we want to use in the learning algorithm
         epochs_num: integer, number of epochs
-        momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm
-    
+        momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm    
     Returns:
         epochs: list, list containing all the epochs
         losses: list, list containing the loss at the beginning of each epoch
@@ -116,8 +127,10 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0
 
     criterion = nn.BCELoss()
 
-    losses = []
+    train_losses = []
 
+    validation_losses = []
+    
     epochs = []
 
     start = time.time()
@@ -125,6 +138,10 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0
     remaining_time = 0
 
     for epoch in range(epochs_num):
+        
+        validation_dataset, train_dataset = split_dataset_randomly(dataset)
+        
+        train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
 
         for i_batch, sample_batched in enumerate(train_dataloader):
 
@@ -136,11 +153,13 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0
 
             output = model(input)
 
-            loss = criterion(output, target)
+            train_loss = criterion(output, target)
 
-            loss.backward()
+            train_loss.backward()
 
             optimizer.step()
+            
+        validation_loss = criterion(model(validation_dataset.segments_list), validation_dataset.labels_list)
 
         end = time.time()
 
@@ -158,7 +177,9 @@ def train_cnn(model, train_dataloader, lr = 0.02, epochs_num = 100, momentum = 0
 
         sys.stdout.flush()
 
-        losses.append(loss.item())
+        train_losses.append(train_loss.item())
+        
+        validation_losses.append()
 
         epochs.append(epoch)
 
