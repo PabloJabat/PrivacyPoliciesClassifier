@@ -46,7 +46,7 @@ def sentence_serialization(sentence, word2idx, lower_case = True):
         
     """
     
-    s_sentence = list()
+    s_sentence = []
     
     not_found = 0
     
@@ -471,9 +471,13 @@ def process_dataset(folder, labels, word2idx, read = False):
             
         dataframe_file.close()
         
-        sentence_matrices = list()
+        num_records = len(opened_dataframe)
+        
+        num_labels = len(opened_dataframe["label"].iloc[0])
+        
+        sentence_matrices = np.zeros(num_records, dtype = 'object')
 
-        labels_matrices = list()
+        labels_matrices = np.zeros((num_records, num_labels))
         
         for index, row in opened_dataframe.iterrows():
 
@@ -481,9 +485,9 @@ def process_dataset(folder, labels, word2idx, read = False):
 
             label = row["label"]
 
-            sentence_matrices.append(sentence_serialization(segment, word2idx))
+            sentence_matrices[index] = sentence_serialization(segment, word2idx)
 
-            labels_matrices.append(label)
+            labels_matrices[index] = label
             
         path_sentence_matrices = join(output_path, "all_sentence_matrices.pkl")
 
