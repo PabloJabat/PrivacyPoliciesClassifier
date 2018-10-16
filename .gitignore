@@ -12,5 +12,9 @@ agg_data/*
 raw_data/*
 processed_data/*
 glove.6B/*
+trained_models/*
+trained_models_pics/*
+embeddings_data/*
+datasets/*
 !.keep
 !labels.pkl
