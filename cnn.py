@@ -116,9 +116,11 @@ class CNN(nn.Module):
                      
                       'name': self.cnn_name}
         
-        output_file = open(self.cnn_name + "_params.pkl", "wb")
+        output_path = join("trained_models", self.cnn_name + "_params.pkl")
         
-        pickle.dump(cnn_params, output_file)
+        with open = open(output_path, "wb") as output_file:
+        
+            pickle.dump(cnn_params, output_file)
         
     def train_cnn(self, dataset, lr = 0.02, epochs_num = 100, batch_size = 40, momentum = 0.9):
         """
@@ -311,7 +313,7 @@ class CNN(nn.Module):
             print row_format.format(label, best_f1_label[index], best_t_label[index])
 
         # We save the figure into a picture
-        fig.savefig(fname = self.cnn_name + '.png', format = 'png')
+        fig.savefig(fname = join("trained_models_pics" ,self.cnn_name + '.png'), format = 'png')
 
     @staticmethod
     def get_best_thresholds(y_test, y_hat_test, labels):
