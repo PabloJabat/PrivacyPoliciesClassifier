@@ -74,7 +74,7 @@ def sentence_serialization(sentence, word2idx, lower_case = True):
         
     return s_sentence
 
-def get_tokens(path, read = False):
+def get_tokens(inputh_path, output_path, read = False):
     """
     
     Checks all the files in filespath and returns a set of all the words found in the files. The path has to have tow 
@@ -91,40 +91,26 @@ def get_tokens(path, read = False):
     
     """
 
-    if isfile("dictionary.pkl") and read:
+    dictionary_path = join(output_path, "dictionary.pkl")
+    
+    if isfile(dictionary_path) and read:
         
         print("Loading from file dictionary.pkl")
         
-        input_file = open("dictionary.pkl","rb")
+        with open(dictionary_path,"rb") as dictionary_file:
         
-        dictionary = pickle.load(input_file)
-        
-        input_file.close()
+            dictionary = pickle.load(dictionary_file)
         
     else:
         
         print("Processing dataset ...")
     
         dictionary = set()
-        
-        train_path = join(path,"train")
-        
-        test_path = join(path,"test")
-        
-        validation_path = join(path,"validation")
 
-        files = [join(train_path, f) for f in listdir(train_path) if isfile(join(train_path, f))]
+        files = [join(inputh_path, f) for f in listdir(inputh_path) if isfile(join(inputh_path, f))]
         
-        files.remove(join(train_path,".keep"))
-
-        files.extend([join(test_path, f) for f in listdir(test_path) if isfile(join(test_path, f))])
-        
-        files.remove(join(test_path,".keep"))
-        
-        files.extend([join(validation_path, f) for f in listdir(validation_path) if isfile(join(validation_path, f))])
-        
-        files.remove(join(validation_path,".keep"))
-                
+        files.remove(join(inputh_path,".keep"))
+              
         for f in files:
 
             opened_file = open(f,'r')
@@ -137,11 +123,9 @@ def get_tokens(path, read = False):
 
                 dictionary = dictionary.union(a[1])
 
-        output_file = open("dictionary.pkl","wb")
+        with open(dictionary_path, "wb") as dictionary_file:
 
-        pickle.dump(dictionary, output_file)
-
-        output_file.close()
+            pickle.dump(dictionary, dictionary_file)
             
     return dictionary
 
@@ -172,7 +156,7 @@ def label_to_vector(label, labels):
     
     return vector
 
-def get_glove_dicts(path, dims, read = False):
+def get_glove_dicts(inputh_path, output_path, dims, read = False):
     """
     
     This functions returns two dictionaries that process the glove.6B folder and gets the pretrained 
@@ -188,21 +172,21 @@ def get_glove_dicts(path, dims, read = False):
     
     """
     
-    if isfile("word2vector_globe.pkl") and isfile("word2idx_globe.pkl") and read:
+    word2vector_path = "word2vector_globe_" + str(dims) + ".pkl"
+    
+    word2vector_path = join(output_path, word2vector_path)
+    
+    word2idx_path = "word2idx_globe_" + str(dims) + ".pkl"
+    
+    word2idx_path = join(output_path, word2idx_path)
+    
+    if isfile(word2vector_path) and isfile(word2idx_path) and read:
         
-        print("Loading from files word2vector.pkl and word2idx.pkl")
+        print("Loading from files word2vector_globe_{0}.pkl and word2idx_globe_{0}.pkl".format(dims))
 
-        input_file1 = open("word2vector_globe.pkl","rb")
+        with open(word2vector_path,"rb") as word2vector_file:
         
-        word2vector = pickle.load(input_file1)
-        
-        input_file1.close()
-
-        input_file2 = open("word2idx_globe.pkl","rb")
-        
-        word2idx = pickle.load(input_file2)
-        
-        input_file2.close()
+            word2vector = pickle.load(word2vector_file)
 
     else:
         
@@ -216,7 +200,7 @@ def get_glove_dicts(path, dims, read = False):
 
         vectors = [np.zeros(dims)]
 
-        with open(join(path,path + "." + str(dims) + "d.txt")) as glove_file:
+        with open(join(inputh_path, inputh_path + "." + str(dims) + "d.txt")) as glove_file:
 
             for line in glove_file:
 
@@ -236,21 +220,21 @@ def get_glove_dicts(path, dims, read = False):
         
         word2vector = {w: vectors[word2idx[w]] for w in words}
 
-        output_file1 = open("word2vector_globe.pkl","wb")
+        output_file1 = open(word2vector_file,"wb")
 
         pickle.dump(word2vector, output_file1)
 
         output_file1.close()
 
-        output_file2 = open("word2idx_globe.pkl","wb")
+        output_file2 = open(word2idx_file,"wb")
 
         pickle.dump(word2idx, output_file2)
 
         output_file2.close()
     
-    return (word2vector, word2idx)
+    return word2vector
 
-def get_weight_matrix(dictionary, word2vector, dims, read = False):
+def get_weight_matrix(dictionary, word2vector, dims, output_path, read = False):
     """
 
     This function returns a matrix containing the weights that will be used as pretrained embeddings. It will read 
@@ -267,22 +251,26 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
         weights_matrix
 
     """
+    
+    weights_path = "weights_matrix_" + str(dims) + ".pkl"
+    
+    weights_path = join(output_path, weights_path)
+    
+    word2idx_path = "word2idx_" + str(dims) + ".pkl"
+    
+    word2idx_path = join(output_path, word2idx_path)
 
-    if isfile("weights_matrix.pkl") and read:
+    if isfile(weights_path) and isfile(word2idx_path) and read:
         
         print("Loading from file weights_matrix.pkl")
 
-        input_file1 = open("weights_matrix.pkl","rb")
+        with open(weights_path,"rb") as weights_file:
         
-        weights_matrix = pickle.load(input_file1)
+            weights_matrix = pickle.load(weights_file)
+
+        with open(word2idx_path,"rb") as word2idx_file:
         
-        input_file1.close()
-        
-        input_file2 = open("word2idx.pkl","rb")
-        
-        word2idx = pickle.load(input_file2)
-        
-        input_file2.close()
+            word2idx = pickle.load(word2idx_file)
 
     else:
         
@@ -314,17 +302,13 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
                 
                 word2idx[word] = i
 
-        output_file1 = open("weights_matrix.pkl","wb")
+        with open(weights_path,"wb") as weights_file:
 
-        pickle.dump(weights_matrix, output_file1)
+            pickle.dump(weights_matrix, weights_file)
+            
+        with open(word2idx_path,"wb") as word2idx_file:
 
-        output_file1.close()
-        
-        output_file2 = open("word2idx.pkl","wb")
-
-        pickle.dump(word2idx, output_file2)
-        
-        output_file2.close()
+            pickle.dump(word2idx, word2idx_file)
             
     return (weights_matrix, word2idx)
 
@@ -348,8 +332,8 @@ def process_dataset(labels, word2idx, read = False):
         labels_matrices: list, a list of lists of lists containing the labels of the dataset. labels_matrices[i][j][k] ->
         "i" is for the file, "j" for the line and "k" for the boolean variable specifying 
         the presence of the a label.
-    
     """
+    
     
     """
     
@@ -359,19 +343,15 @@ def process_dataset(labels, word2idx, read = False):
     
     def pickle_matrix(matrix, path):
         
-        output_file = open(path,"wb")
+        with open(path,"wb") as output_file:
 
-        pickle.dump(matrix, output_file)
-
-        output_file.close()
+            pickle.dump(matrix, output_file)
     
     def unpickle_matrix(path):
         
-        input_file = open(path,"rb")
+        with open(path,"rb") as input_file:
 
-        matrix = pickle.load(input_file)
-
-        input_file.close()
+            matrix = pickle.load(input_file)
         
         return matrix
     
@@ -385,13 +365,13 @@ def process_dataset(labels, word2idx, read = False):
     
     output_path = "processed_data"
     
-    if isfile("agg_data/agg_data.pkl") and read:
-        
-        print("Loading from agg_data/agg_data.pkl")
-        
-        path_sentence_matrices = join(output_path, "all_sentence_matrices.pkl")
+    path_sentence_matrices = join(output_path, "all_sentence_matrices.pkl")
 
-        path_labels_matrices = join(output_path, "all_label_matrices.pkl")
+    path_labels_matrices = join(output_path, "all_label_matrices.pkl")
+    
+    if isfile(path_sentence_matrices) and isfile(path_labels_matrices) and read:
+        
+        print("Loading from " + path_sentence_matrices + " and " + path_labels_matrices)       
         
         sentence_matrices = unpickle_matrix(path_sentence_matrices)
 
@@ -403,11 +383,9 @@ def process_dataset(labels, word2idx, read = False):
         
         print("Processing dataset ...")
         
-        dataframe_file = open("agg_data/agg_data.pkl",'rb')
+        with open("agg_data/agg_data.pkl",'rb') as dataframe_file:
 
-        opened_dataframe = pickle.load(dataframe_file)
-
-        dataframe_file.close()
+            opened_dataframe = pickle.load(dataframe_file)
 
         num_records = len(opened_dataframe)
 
@@ -433,7 +411,7 @@ def process_dataset(labels, word2idx, read = False):
 
         pickle_matrix(sentence_matrices, path_sentence_matrices)
 
-        pickle_matrix(sentence_matrices, path_labels_matrices)
+        pickle_matrix(labels_matrices, path_labels_matrices)
 
         return sentence_matrices, labels_matrices               
 
@@ -485,11 +463,9 @@ def aggregate_data(read = False):
             
         folder_output_path = "agg_data"
 
-        output_file = file(join(output_path, "agg_data.pkl"),"wb")
+        with file(join(output_path, "agg_data.pkl"),"wb") as output_file:
 
-        pickle.dump(all_results, output_file)
-
-        output_file.close()            
+            pickle.dump(all_results, output_file)         
         
     """
     
@@ -501,12 +477,10 @@ def aggregate_data(read = False):
     
     output_path = "agg_data"
     
-    labels_file = open("labels.pkl","rb")
+    with open("labels.pkl","rb") as labels_file:
         
-    labels_dict = pickle.load(labels_file)
-        
-    labels_file.close()
-        
+        labels_dict = pickle.load(labels_file)
+                
     file_exists = isfile(join(output_path, "agg_data.pkl"))
                                 
     if file_exists and read:
