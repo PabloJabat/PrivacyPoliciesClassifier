@@ -191,7 +191,7 @@ def get_glove_dicts(path, dims, read = False):
         
         print("Loading from files word2vector.pkl and word2idx.pkl")
 
-        input_file1 = open("word2vector.pkl","rb")
+        input_file1 = open("word2vector_globe.pkl","rb")
         
         word2vector = pickle.load(input_file1)
         
@@ -235,7 +235,7 @@ def get_glove_dicts(path, dims, read = False):
         
         word2vector = {w: vectors[word2idx[w]] for w in words}
 
-        output_file1 = open("word2vector.pkl","wb")
+        output_file1 = open("word2vector_globe.pkl","wb")
 
         pickle.dump(word2vector, output_file1)
 
