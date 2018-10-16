@@ -187,7 +187,7 @@ def get_glove_dicts(path, dims, read = False):
     
     """
     
-    if isfile("word2vector.pkl") and isfile("word2idx_globe.pkl") and read == True:
+    if isfile("word2vector_globe.pkl") and isfile("word2idx_globe.pkl") and read == True:
         
         print("Loading from files word2vector.pkl and word2idx.pkl")
 
