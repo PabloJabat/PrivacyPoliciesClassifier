@@ -68,19 +68,20 @@ def sentence_serialization(sentence, word2idx, lower_case = True):
             
             not_found += 1
             
-            print("Warning: At least one token is not present in the word2idx dict. For instance: " + token + ". Not found: " 
-                   + str(not_found))
+            print("Warning: At least one token is not present in the word2idx dict. For instance: " + token + 
+                  
+                  ". Not found: " + str(not_found))
         
     return s_sentence
 
 def get_tokens(path, read = False):
     """
     
-    Checks all the files in filespath and returns a set of all the words found in the files. The path has to have tow folders, 
-    one called train with all the files meant for training the NN and another called test with all the files that will be used 
-    for testing. The function will ignore all the folders inside filespath automatically. We set all the words to be lower 
-    case. The function will check if the a file with all the tokens is available. In that case this function will be much 
-    faster. 
+    Checks all the files in filespath and returns a set of all the words found in the files. The path has to have tow 
+    folders, one called train with all the files meant for training the NN and another called test with all the files that
+    will be used for testing. The function will ignore all the folders inside filespath automatically. We set all the words 
+    to be lower case. The function will check if the a file with all the tokens is available. In that case this function 
+    will be much faster. 
     
     Args:
         filespath: string, path to the folder with all the files containing the words that we want to extract.
@@ -90,7 +91,7 @@ def get_tokens(path, read = False):
     
     """
 
-    if isfile("dictionary.pkl") and read == True:
+    if isfile("dictionary.pkl") and read:
         
         print("Loading from file dictionary.pkl")
         
@@ -187,7 +188,7 @@ def get_glove_dicts(path, dims, read = False):
     
     """
     
-    if isfile("word2vector_globe.pkl") and isfile("word2idx_globe.pkl") and read == True:
+    if isfile("word2vector_globe.pkl") and isfile("word2idx_globe.pkl") and read:
         
         print("Loading from files word2vector.pkl and word2idx.pkl")
 
@@ -252,7 +253,7 @@ def get_glove_dicts(path, dims, read = False):
 def get_weight_matrix(dictionary, word2vector, dims, read = False):
     """
 
-    This function returns a matrix containing the weights that will be used as pretrained embeddings. It will read           
+    This function returns a matrix containing the weights that will be used as pretrained embeddings. It will read 
     weights_matrix.pkl file as long as it exists. This will make the code much faster. 
 
     Args:
@@ -262,11 +263,12 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
         read: boolean, variable that allows us to decide wether to read from pre-processed files or not.
     Returns:
         weights_matrix: np.array, matrix containing all the embeddings.
-        word2idx: dictionary, the keys are the words and the values the index where we can find the vector in weights_matrix
+        word2idx: dictionary, the keys are the words and the values the index where we can find the vector in 
+        weights_matrix
 
     """
 
-    if isfile("weights_matrix.pkl") and read == True:
+    if isfile("weights_matrix.pkl") and read:
         
         print("Loading from file weights_matrix.pkl")
 
@@ -326,7 +328,7 @@ def get_weight_matrix(dictionary, word2vector, dims, read = False):
             
     return (weights_matrix, word2idx)
 
-def process_dataset(folder, labels, word2idx, read = False):
+def process_dataset(labels, word2idx, read = False):
     """
     
     This function process all the privacy policy files and transforms all the segments into lists of integers. It also 
@@ -336,14 +338,16 @@ def process_dataset(folder, labels, word2idx, read = False):
     
     Args:
         path: string, path where all the files we want to process are located (all the privacy policies).
-        word2idx: dictionary the keys are the words and the values the index where we can find the vector in weights_matrix.
+        word2idx: dictionary the keys are the words and the values the index where we can find the vector in 
+        weights_matrix.
         labels: labels: dictionary, dictionary with the labels as the keys and indexes as the values.
         read: boolean, variable that allows us to decide wether to read from pre-processed files or not. 
     Returns:
         sentence_matrices: list, a list of lists of lists containing the segments of the files transformed into integers. 
         sentence_matrices[i][j][k] -> "i" is for the file, "j" for the line and "k" for the token. 
-        labels_matrices: list, a list of lists of lists containing the labels of the dataset. labels_matrices[i][j][k] -> "i"
-        is for the file, "j" for the line and "k" for the boolean variable specifying the presence of the a label.
+        labels_matrices: list, a list of lists of lists containing the labels of the dataset. labels_matrices[i][j][k] ->
+        "i" is for the file, "j" for the line and "k" for the boolean variable specifying 
+        the presence of the a label.
     
     """
     
@@ -352,18 +356,6 @@ def process_dataset(folder, labels, word2idx, read = False):
     Helper functions
     
     """
-    
-    def are_files_in(folder):       
-        
-        folder_output_path = join(output_path, folder)
-        
-        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
-        
-        files.remove(".keep")
-
-        all_files = all([isfile(join(folder_output_path,f)) for f in files])       
-
-        return all_files
     
     def pickle_matrix(matrix, path):
         
@@ -383,76 +375,6 @@ def process_dataset(folder, labels, word2idx, read = False):
         
         return matrix
     
-    def load():
-        
-        print("Loading from processed_data/")
-        
-        sentence_matrices = list()
-
-        labels_matrices = list()
-
-        for f in files:
-            
-            path_sentence_matrices = join(folder_output_path, subfolders[0])
-        
-            path_labels_matrices = join(folder_output_path, subfolders[1])
-
-            sentence_matrix = unpickle_matrix(join(path_sentence_matrices, f.replace(".csv",".pkl")))
-            
-            labels_matrix = unpickle_matrix(join(path_labels_matrices, f.replace(".csv",".pkl")))
-            
-            sentence_matrices.append(sentence_matrix)
-            
-            labels_matrices.append(labels_matrix)
-            
-        return sentence_matrices, labels_matrices
-    
-    def process():
-        
-        print("Processing dataset ...")
-        
-        sentence_matrices = list()
-
-        labels_matrices = list()
-
-        for f in files:   
-
-            file_path = join(folder_input_path,f)
-
-            sentence_matrix = list()
-
-            labels_matrix = list()
-
-            dataframe_file = open(file_path,'rb')
-            
-            opened_dataframe = pickle.load(dataframe_file)
-            
-            dataframe_file.close()
-
-            for index, row in opened_dataframe.iterrows():
-
-                segment = row["segment"]
-
-                label = row["label"]
-
-                sentence_matrix.append(sentence_serialization(segment, word2idx))
-
-                labels_matrix.append(label)
-                
-            path_sentence_matrices = join(folder_output_path, join(subfolders[0], f))
-
-            path_labels_matrices = join(folder_output_path, join(subfolders[1], f))
-
-            pickle_matrix(sentence_matrix, path_sentence_matrices)
-
-            pickle_matrix(labels_matrix, path_labels_matrices)
-         
-            sentence_matrices.append(sentence_matrix)
-
-            labels_matrices.append(labels_matrix)
-            
-        return sentence_matrices, labels_matrices
-    
     """
     
     main code of process_dataset
@@ -463,22 +385,38 @@ def process_dataset(folder, labels, word2idx, read = False):
     
     output_path = "processed_data"
     
-    if folder == "":
+    if isfile("agg_data/agg_data.pkl") and read:
+        
+        print("Loading from agg_data/agg_data.pkl")
+        
+        path_sentence_matrices = join(output_path, "all_sentence_matrices.pkl")
+
+        path_labels_matrices = join(output_path, "all_label_matrices.pkl")
+        
+        sentence_matrices = unpickle_matrix(path_sentence_matrices)
+
+        labels_matrices = unpickle_matrix(path_labels_matrices)
+
+        return sentence_matrices, labels_matrices 
+        
+    else:
+        
+        print("Processing dataset ...")
         
         dataframe_file = open("agg_data/agg_data.pkl",'rb')
-             
+
         opened_dataframe = pickle.load(dataframe_file)
-            
+
         dataframe_file.close()
-        
+
         num_records = len(opened_dataframe)
-        
+
         num_labels = len(opened_dataframe["label"].iloc[0])
-        
+
         sentence_matrices = np.zeros(num_records, dtype = 'object')
 
         labels_matrices = np.zeros((num_records, num_labels))
-        
+
         for index, row in opened_dataframe.iterrows():
 
             segment = row["segment"]
@@ -488,50 +426,25 @@ def process_dataset(folder, labels, word2idx, read = False):
             sentence_matrices[index] = sentence_serialization(segment, word2idx)
 
             labels_matrices[index] = label
-            
+
         path_sentence_matrices = join(output_path, "all_sentence_matrices.pkl")
 
         path_labels_matrices = join(output_path, "all_label_matrices.pkl")
-        
+
         pickle_matrix(sentence_matrices, path_sentence_matrices)
 
         pickle_matrix(sentence_matrices, path_labels_matrices)
-            
+
         return sentence_matrices, labels_matrices               
-        
-    else:
-    
-        folder_input_path = join(input_path,folder)
 
-        folder_output_path = join(output_path,folder)
-
-        subfolders = ["sentence_matrices", "labels_matrices"]
-
-        tests = [are_files_in(join(folder, subfolder)) for subfolder in subfolders]
-
-        all_files = all(tests)
-
-        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
-
-        files.remove(".keep")
-
-        if all_files == True and read == True:
-
-            sentence_matrices, labels_matrices = load()
-
-        else:
-
-            sentence_matrices, labels_matrices = process()
-
-        return (sentence_matrices, labels_matrices) 
-
-def aggregate_data(read = False, onefile = False):    
+def aggregate_data(read = False):    
     """
     
     This function processes raw_data and aggregates all the segments labels. Places all the files in the agg_data folder. 
     
     Args:
-        read: boolean, if set to true it will read the data from agg_data folder as long as all the files are found inside the 
+        read: boolean, if set to true it will read the data from agg_data folder as long as all the files are found 
+        inside the 
         folder.
     Returns:
         Nothing.
@@ -544,31 +457,9 @@ def aggregate_data(read = False, onefile = False):
     
     """
     
-    def are_files_in(folder, input_path, output_path):
+    def aggregate_files(input_path, output_path, labels_dict):
         
-        all_files = True
-        
-        folder_input_path = join(input_path, folder)
-        
-        folder_output_path = join(output_path, folder)
-        
-        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
-        
-        files.remove(".keep")
-        
-        for f in files:       
-        
-            path_dataframes = join(folder_output_path,f.replace(".csv",".pkl"))
-
-            all_files = all_files and isfile(path_dataframes)
-            
-        return all_files
-    
-    def aggregate_files_in(folder, input_path, output_path, labels_dict):
-        
-        folder_input_path = join(input_path, folder)
-        
-        files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+        files = [f for f in listdir(input_path) if isfile(join(input_path, f))]
         
         files.remove(".keep")
         
@@ -576,7 +467,7 @@ def aggregate_data(read = False, onefile = False):
         
         for f in files:
 
-            data = pd.read_csv(join(folder_input_path,f), names = ["idx","segment","label"])
+            data = pd.read_csv(join(input_path,f), names = ["idx","segment","label"])
 
             data['label'] = data['label'].apply(lambda x: label_to_vector(x, labels_dict))
 
@@ -587,34 +478,18 @@ def aggregate_data(read = False, onefile = False):
             segments = data[['idx','segment']].set_index('idx').drop_duplicates()
 
             result = pd.merge(labels, segments, left_index = True, right_index = True)
-            
-            if folder == "all":
                 
-                all_results = pd.concat([all_results, result])
-                
-            else:
-                        
-                folder_output_path = join(output_path, folder)
-
-                output_file = file(join(folder_output_path, f).replace(".csv",".pkl"),"wb")
-
-                pickle.dump(result, output_file)
-
-                output_file.close()
+            all_results = pd.concat([all_results, result])
                 
         all_results.reset_index(drop=True, inplace=True)
-                
-        if onefile:
             
-            folder_output_path = "agg_data"
-            
-            output_file = file(join(folder_output_path, "agg_data.pkl"),"wb")
+        folder_output_path = "agg_data"
 
-            pickle.dump(all_results, output_file)
+        output_file = file(join(output_path, "agg_data.pkl"),"wb")
 
-            output_file.close()
-            
-        return files
+        pickle.dump(all_results, output_file)
+
+        output_file.close()            
         
     """
     
@@ -631,45 +506,19 @@ def aggregate_data(read = False, onefile = False):
     labels_dict = pickle.load(labels_file)
         
     labels_file.close()
-    
-    if onefile:
         
-        onefile_exists = isfile(join(output_path, "agg_data.pkl"))
+    file_exists = isfile(join(output_path, "agg_data.pkl"))
                                 
-        if onefile_exists == True and read == True:
-                                            
-            print("agg_data.pkl are already in agg_data/")
-            
-            return None
+    if file_exists and read:
 
-        else: 
-        
-            print("Processing dataset in one file ...")
-        
-            files = aggregate_files_in("all", input_path, output_path, labels_dict)
-            
-            return files
+        print("agg_data.pkl are already in agg_data/")
 
-    else:
-                                
-        all_files = are_files_in("test", input_path, output_path) and are_files_in("train", input_path, output_path)
-           
-        if all_files == True and read == True:
-        
-            print("Files are already in agg_data/")
-            
-            return None
-        
-        else:
+    else: 
+
+        print("Processing dataset in one file ...")
+
+        aggregate_files(input_path, output_path, labels_dict)
     
-            print("Processing dataset ...")
-
-            files_train = aggregate_files_in("train", input_path, output_path, labels_dict)
-
-            files_test = aggregate_files_in("test", input_path, output_path, labels_dict)
-            
-            return None
-
 def get_absent_words(dictionary, word2vector):
     """
     
