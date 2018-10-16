@@ -355,10 +355,10 @@ class CNN(nn.Module):
             record i whereas the j-th column is the label j.
             y_pred: torch.tensor, 2-dimensional torch.tensor containing the probabilities assigned to each label. The i-th 
             row is the record i whereas the j-th column is the label j.
-            threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned to 
-            a record.
-            dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to set 
-            this parameter.
+            threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned 
+            to a record.
+            dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to 
+            set this parameter.
             eps: double, it is just a very small value that avoids dividing by 0 when computing the precision and recall. 
 
         Returns:
@@ -390,17 +390,18 @@ class CNN(nn.Module):
     def f1_score_per_label(y_true, y_pred, threshold, dim=0, eps=1e-9):
         """
 
-        Computes the f1 score per label resulting from the comparison between y_true and y_pred after using the threshold set.
+        Computes the f1 score per label resulting from the comparison between y_true and y_pred after using the threshold 
+        set.
 
         Args: 
             y_true: torch.tensor, 2-dimensional torch.tensor containing the true labels per record. The i-th row is the 
             record i whereas the j-th column is the label j.
             y_pred: torch.tensor, 2-dimensional torch.tensor containing the probabilities assigned to each label. The i-th 
             row is the record i whereas the j-th column is the label j.
-            threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned to 
-            a record.
-            dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to set 
-            this parameter.
+            threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned 
+            to a record.
+            dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to 
+            set this parameter.
             eps: double, it is just a very small value that avoids dividing by 0 when computing the precision and recall.
 
         Returns:
