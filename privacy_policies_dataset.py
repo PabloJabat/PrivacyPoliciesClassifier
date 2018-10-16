@@ -80,7 +80,7 @@ class PrivacyPoliciesDataset(Dataset):
 
                 resized_array = np.append(resized_array, np.zeros(zeros_to_append))
 
-                self.segments_list[i] = torch.tensor(resized_array, dtype = torch.int64)
+                self.segments_list[i] = torch.tensor(resized_array, dtype = torch.long)
                 
     def expand_dimensions(self):
         
@@ -233,3 +233,45 @@ class PrivacyPoliciesDataset_all(Dataset):
 
             return dataset
     
+    @staticmethod
+    def collate_data(batch):
+        
+        def stack_segments(segments, clearance = 2):
+
+            import numpy as np
+
+            segments_len = map(len, segments)
+
+            max_len = max(segments_len)
+
+            segments_list = []
+
+            output_len = max_len + clearance * 2
+
+            for i, segment in enumerate(segments):
+
+                segment_array = np.array(segment)
+
+                zeros_to_prepend = (output_len - len(segment_array))/2
+
+                zeros_to_append = output_len - len(segment_array) - zeros_to_prepend
+
+                resized_array = np.append(np.zeros(zeros_to_prepend), segment_array)
+
+                resized_array = np.append(resized_array, np.zeros(zeros_to_append))
+
+                segments_list.append(torch.tensor(resized_array, dtype = torch.int64))
+
+                segments_tensor = torch.stack(segments_list).unsqueeze(1)
+
+            return segments_tensor                         
+
+        segments = [item[0] for item in batch]
+
+        labels = [item[1] for item in batch]
+
+        segments_tensor = stack_segments(segments)
+
+        labels_tensor = torch.stack(labels)
+
+        return [segments_tensor, labels_tensor]
