@@ -150,12 +150,12 @@ class CNN(nn.Module):
         start = time.time()
 
         remaining_time = 0
+        
+        validation_dataset, train_dataset = dataset.split_dataset_randomly()
+
+        train_dataloader = DataLoader(train_dataset, batch_size = batch_size, collate_fn = PPD.collate_data)
 
         for epoch in range(epochs_num):
-
-            validation_dataset, train_dataset = dataset.split_dataset_randomly()
-
-            train_dataloader = DataLoader(train_dataset, batch_size = batch_size, collate_fn = PPD.collate_data)
 
             for i_batch, sample_batched in enumerate(train_dataloader):
 
