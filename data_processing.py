@@ -463,7 +463,7 @@ def process_dataset(folder, labels, word2idx, read = False):
     
     output_path = "processed_data"
     
-    if folder == "all":
+    if folder == "":
         
         dataframe_file = open("agg_data/agg_data.pkl",'rb')
              
@@ -544,7 +544,7 @@ def aggregate_data(read = False, onefile = False):
     
     """
     
-    def are_files_in(folder):
+    def are_files_in(folder, input_path, output_path):
         
         all_files = True
         
@@ -564,11 +564,13 @@ def aggregate_data(read = False, onefile = False):
             
         return all_files
     
-    def aggregate_files_in(folder):
+    def aggregate_files_in(folder, input_path, output_path, labels_dict):
         
         folder_input_path = join(input_path, folder)
         
         files = [f for f in listdir(folder_input_path) if isfile(join(folder_input_path, f))]
+        
+        files.remove(".keep")
         
         all_results = pd.DataFrame({'label' : [], 'segment' : []})
         
@@ -588,7 +590,7 @@ def aggregate_data(read = False, onefile = False):
             
             if folder == "all":
                 
-                all_results = pd.concat([result, all_results])
+                all_results = pd.concat([all_results, result])
                 
             else:
                         
@@ -600,6 +602,8 @@ def aggregate_data(read = False, onefile = False):
 
                 output_file.close()
                 
+        all_results.reset_index(drop=True, inplace=True)
+                
         if onefile:
             
             folder_output_path = "agg_data"
@@ -608,7 +612,9 @@ def aggregate_data(read = False, onefile = False):
 
             pickle.dump(all_results, output_file)
 
-            output_file.close()                       
+            output_file.close()
+            
+        return files
         
     """
     
@@ -633,28 +639,36 @@ def aggregate_data(read = False, onefile = False):
         if onefile_exists == True and read == True:
                                             
             print("agg_data.pkl are already in agg_data/")
+            
+            return None
 
         else: 
         
             print("Processing dataset in one file ...")
         
-            aggregate_files_in("all")
+            files = aggregate_files_in("all", input_path, output_path, labels_dict)
+            
+            return files
 
     else:
                                 
-        all_files = are_files_in("test") and are_files_in("train")
+        all_files = are_files_in("test", input_path, output_path) and are_files_in("train", input_path, output_path)
            
         if all_files == True and read == True:
         
             print("Files are already in agg_data/")
+            
+            return None
         
         else:
     
             print("Processing dataset ...")
 
-            aggregate_files_in("train")
+            files_train = aggregate_files_in("train", input_path, output_path, labels_dict)
 
-            aggregate_files_in("test")
+            files_test = aggregate_files_in("test", input_path, output_path, labels_dict)
+            
+            return None
 
 def get_absent_words(dictionary, word2vector):
     """
