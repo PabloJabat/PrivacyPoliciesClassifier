@@ -1,9 +1,19 @@
 import torch
+
 import torch.nn as nn
+
 import torch.nn.functional as F
+
+from torch.utils.data import DataLoader
+
 from torch.optim import SGD
+
+from privacy_policies_dataset import PrivacyPoliciesDataset_all as PPD
+
 import sys
+
 import time
+
 import pickle
 
 class CNN(nn.Module):    
@@ -139,10 +149,10 @@ def train_cnn(model, dataset, lr = 0.02, epochs_num = 100, batch_size = 40, mome
 
     for epoch in range(epochs_num):
         
-        validation_dataset, train_dataset = split_dataset_randomly(dataset)
+        validation_dataset, train_dataset = dataset.split_dataset_randomly()
         
-        train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
-
+        train_dataloader = DataLoader(train_dataset, batch_size = batch_size, collate_fn = PPD.collate_data)
+        
         for i_batch, sample_batched in enumerate(train_dataloader):
 
             input = sample_batched[0]
@@ -159,7 +169,9 @@ def train_cnn(model, dataset, lr = 0.02, epochs_num = 100, batch_size = 40, mome
 
             optimizer.step()
             
-        validation_loss = criterion(model(validation_dataset.segments_list), validation_dataset.labels_list)
+        validation_segments, validation_labels = PPD.collate_data(validation_dataset)
+            
+        validation_loss = criterion(model(validation_segments.long()), validation_labels.float())
 
         end = time.time()
 
@@ -179,16 +191,15 @@ def train_cnn(model, dataset, lr = 0.02, epochs_num = 100, batch_size = 40, mome
 
         train_losses.append(train_loss.item())
         
-        validation_losses.append()
+        validation_losses.append(validation_loss.item())
 
         epochs.append(epoch)
 
     print("\n" + "Training completed. Total training time: " + str(round((end - start) / 60, 2)) + " mins")
     
-    return epochs, losses
+    return epochs, train_losses, validation_losses
 
 def f1_score(y_true, y_pred, threshold, dim = 0, eps = 1e-9):
-
     """
     
     Computes the f1 score resulting from the comparison between y_true and y_pred after using the threshold set.
@@ -226,8 +237,8 @@ def f1_score(y_true, y_pred, threshold, dim = 0, eps = 1e-9):
     return f1.item(), torch.mean(precision).item(), torch.mean(recall).item()
 
 def f1_score_per_label(y_true, y_pred, threshold, dim=0, eps=1e-9):
-    
     """
+    
     Computes the f1 score per label resulting from the comparison between y_true and y_pred after using the threshold set.
     
     Args: 
@@ -245,6 +256,7 @@ def f1_score_per_label(y_true, y_pred, threshold, dim=0, eps=1e-9):
         f1: list, the resulting f1 score per label (it will be a number between 0 and 1)
         precision: list, the resulting precision per label (it will be a number between 0 and 1)
         recall: list, the resulting recall per label (it will be a number between 0 and 1)
+        
     """
 
     y_pred = torch.ge(y_pred.float(), threshold).float()
