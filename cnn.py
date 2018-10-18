@@ -118,7 +118,7 @@ class CNN(nn.Module):
         
         output_path = join("trained_models", self.cnn_name + "_params.pkl")
         
-        with open = open(output_path, "wb") as output_file:
+        with open(output_path, "wb") as output_file:
         
             pickle.dump(cnn_params, output_file)
         

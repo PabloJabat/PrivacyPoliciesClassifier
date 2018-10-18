@@ -219,19 +219,11 @@ def get_glove_dicts(inputh_path, output_path, dims, read = False):
                 idx += 1
         
         word2vector = {w: vectors[word2idx[w]] for w in words}
+        
+        with open(word2vector_path,"wb") as word2vector_file:
+        
+            pickle.dump(word2vector, word2vector_file)
 
-        output_file1 = open(word2vector_file,"wb")
-
-        pickle.dump(word2vector, output_file1)
-
-        output_file1.close()
-
-        output_file2 = open(word2idx_file,"wb")
-
-        pickle.dump(word2idx, output_file2)
-
-        output_file2.close()
-    
     return word2vector
 
 def get_weight_matrix(dictionary, word2vector, dims, output_path, read = False):
