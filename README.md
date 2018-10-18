@@ -1,4 +1,4 @@
-# Towards-Mimicking-UsablePrivacy
+# Privacy Policies Classifier
 
 To make the code work you will have to create a gold standard from the original dataset and place all the files into the raw_data folder. You can download the original data clicking [here](https://usableprivacy.org/static/data/OPP-115_v1_0.zip). The following paper explains how to transform the original data into a gold standard: https://usableprivacy.org/static/files/swilson_acl_2016.pdf. The website we are refering to is the following one: https://usableprivacy.org/data. 
 
