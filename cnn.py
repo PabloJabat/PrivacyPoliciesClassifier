@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from toch.optim import SGD 
-from privacy_policies_dataset import PrivacyPoliciesDataset_all as PPD
+from torch.optim import SGD 
+from privacy_policies_dataset import PrivacyPoliciesDataset as PPD
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
