@@ -1,29 +1,55 @@
-(dp0
-S'Data Retention'
-p1
-I3
-sS'First Party Collection/Use'
-p2
-I0
-sS'Third Party Sharing/Collection'
+ccollections
+OrderedDict
+p0
+((lp1
+(lp2
+S'First Party Collection/Use'
 p3
-I1
-sS'Policy Change'
-p4
-I7
-sS'User Choice/Control'
+aI0
+aa(lp4
+S'Third Party Sharing/Collection'
 p5
-I8
-sS'Do Not Track'
-p6
-I6
-sS'Data Security'
+aI1
+aa(lp6
+S'User Access, Edit and Deletion'
 p7
-I4
-sS'International and Specific Audiences'
-p8
-I5
-sS'User Access, Edit and Deletion'
+aI2
+aa(lp8
+S'Data Retention'
 p9
-I2
-s.
+aI3
+aa(lp10
+S'Data Security'
+p11
+aI4
+aa(lp12
+S'International and Specific Audiences'
+p13
+aI5
+aa(lp14
+S'Do Not Track'
+p15
+aI6
+aa(lp16
+S'Policy Change'
+p17
+aI7
+aa(lp18
+S'User Choice/Control'
+p19
+aI8
+aa(lp20
+S'Introductory/Generic'
+p21
+aI9
+aa(lp22
+S'Practice not covered'
+p23
+aI10
+aa(lp24
+S'Privacy contact information'
+p25
+aI11
+aatp26
+Rp27
+.
