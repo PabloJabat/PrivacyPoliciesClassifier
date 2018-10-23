@@ -51,9 +51,15 @@ class CNN(nn.Module):
             
         self.relu = nn.ReLU()
         
-        self.linear1 = nn.Linear(self.Co * len(self.Ks), self.Hu)
+        Hu.insert(0, self.Co * len(self.Ks))
         
-        self.linear2 = nn.Linear(self.Hu, self.C)
+        self.linear_layers = nn.ModuleList([nn.Linear(self.Hu[k],self.Hu[k+1]) for k in range(len(self.Hu)-1)])
+        
+        self.linear_last = nn.Linear(self.Hu[-1], self.C)
+        
+        #self.linear1 = nn.Linear(self.Co * len(self.Ks), self.Hu)
+        
+        #self.linear2 = nn.Linear(self.Hu, self.C)
         
         self.sigmoid = nn.Sigmoid()
     
@@ -73,16 +79,18 @@ class CNN(nn.Module):
         
         x = torch.cat(x,1)
         
-        #size(N, Co * len(Ks)) to size(N, Hu)
+        #size(N, Co * len(Ks)) to size(N, Hu_last)
         
-        x = self.linear1(x)
+        for linear in self.linear_layers:
+            
+            x = linear(x)
+
+            x = self.relu(x)
         
-        x = self.relu(x)
-        
-        #size(N, Hu) to size(N, C)
-        
-        x = self.linear2(x)
-        
+        #size(N, Hu_last) to size(N, C)
+                  
+        x = self.linear_last(x)
+
         x = self.sigmoid(x)
         
         return x
@@ -113,14 +121,15 @@ class CNN(nn.Module):
         
             pickle.dump(cnn_params, output_file)
         
-    def train_cnn(self, dataset, lr = 0.02, epochs_num = 100, batch_size = 40, momentum = 0.9):
+    def train_cnn(self, train_dataset, validation_dataset, lr = 0.02, epochs_num = 100, batch_size = 40, momentum = 0.9):
         """
 
         This function trains a CNN model using gradient descent with the posibility of using momentum. 
 
         Args:
             model: cnn.CNN, an instance of a model of the class cnn.CNN 
-            train_dataloader: Dataloader, Dataloader instance built using PrivacyPoliciesDataset instance
+            train_dataset: Dataset, Dataset containing the data that will be used for training
+            validation_dataset: Dataset, Dataset containing the data that will be used for validating the model
             lr: double, learning rate that we want to use in the learning algorithm
             epochs_num: integer, number of epochs
             momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm    
@@ -143,8 +152,6 @@ class CNN(nn.Module):
         start = time.time()
 
         remaining_time = 0
-        
-        validation_dataset, train_dataset = dataset.split_dataset_randomly()
 
         train_dataloader = DataLoader(train_dataset, batch_size = batch_size, collate_fn = PPD.collate_data)
 
@@ -196,29 +203,29 @@ class CNN(nn.Module):
 
         return epochs, train_losses, validation_losses
     
-    def print_results(self, train_dataset, test_dataset, labels):
+    def print_results(self, train_dataset, validation_dataset, labels):
 
         y_train = train_dataset.labels_tensor
 
-        y_test = test_dataset.labels_tensor
+        y_validation = validation_dataset.labels_tensor
 
         x_train = PPD.collate_data(train_dataset)[0]
 
-        x_test = PPD.collate_data(test_dataset)[0]
+        x_validation = PPD.collate_data(validation_dataset)[0]
 
         y_hat_train = self(x_train)
 
-        y_hat_test = self(x_test)
+        y_hat_validation = self(x_validation)
 
         # This will be the x axis
         threshold_list = np.arange(0.0, 1, 0.01)
 
         # These will be the y axis data
-        f1_scores_test = [self.f1_score(y_test, y_hat_test, t)[0] for t in threshold_list]
+        f1_scores_validation = [self.f1_score(y_validation, y_hat_validation, t)[0] for t in threshold_list]
 
-        precisions_test = [self.f1_score(y_test, y_hat_test, t)[1] for t in threshold_list]
+        precisions_validation = [self.f1_score(y_validation, y_hat_validation, t)[1] for t in threshold_list]
 
-        recalls_test = [self.f1_score(y_test, y_hat_test, t)[2] for t in threshold_list]
+        recalls_validation = [self.f1_score(y_validation, y_hat_validation, t)[2] for t in threshold_list]
 
         f1_scores_train = [self.f1_score(y_train, y_hat_train, t)[0] for t in threshold_list]
 
@@ -227,7 +234,9 @@ class CNN(nn.Module):
         recalls_train = [self.f1_score(y_train, y_hat_train, t)[2] for t in threshold_list]
 
         """
+        
         Here comes the pyplot code
+        
         """
 
         fig = plt.figure(figsize=(15,4))
@@ -240,7 +249,7 @@ class CNN(nn.Module):
         ax_recall = fig.add_subplot(133)
 
         # We now plot all the data in te corresponding axis
-        ax_f1.plot(threshold_list, f1_scores_test, label='test')
+        ax_f1.plot(threshold_list, f1_scores_validation, label='validation')
 
         ax_f1.plot(threshold_list, f1_scores_train, label='train')
 
@@ -250,7 +259,7 @@ class CNN(nn.Module):
 
         ax_f1.legend()
 
-        ax_precision.plot(threshold_list, precisions_test, label='test')
+        ax_precision.plot(threshold_list, precisions_validation, label='validation')
 
         ax_precision.plot(threshold_list, precisions_train, label='train')
 
@@ -260,7 +269,7 @@ class CNN(nn.Module):
 
         ax_precision.legend()
 
-        ax_recall.plot(threshold_list, recalls_test, label='test')
+        ax_recall.plot(threshold_list, recalls_validation, label='validation')
 
         ax_recall.plot(threshold_list, recalls_train, label='train')
 
@@ -273,7 +282,7 @@ class CNN(nn.Module):
         plt.show()
 
         # We show the F1, precision and recall for a threshold of 0.5
-        f1, precision, recall = self.f1_score(y_test, y_hat_test, 0.5)
+        f1, precision, recall = self.f1_score(y_validation, y_hat_validation, 0.5)
 
         print("Scores with 0.5 threshold")
 
@@ -287,7 +296,7 @@ class CNN(nn.Module):
 
         print("-" * 35 * 3)
 
-        best_f1_label, best_t_label = self.get_best_thresholds(y_test, y_hat_test, labels)
+        best_f1_label, best_t_label = self.get_best_thresholds(y_validation, y_hat_validation, labels)
 
         print("\n" + "F1 Score per Label")
 
@@ -299,7 +308,7 @@ class CNN(nn.Module):
 
         print("-" * 35 * 3)
 
-        for label, index in labels.iteritems():
+        for label, index in labels.items():
 
             print row_format.format(label, best_f1_label[index], best_t_label[index])
 
@@ -311,9 +320,9 @@ class CNN(nn.Module):
         
         threshold_list = np.arange(0.0, 1, 0.01)
 
-        best_f1_label = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        best_f1_label = np.zeros((12))
 
-        best_t_label = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        best_t_label = np.zeros((12))
 
         for label, index in labels.items():
 
