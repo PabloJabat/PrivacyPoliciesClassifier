@@ -1,11 +1,7 @@
 import data_processing as dp
-
 import numpy as np
-
 import torch
-
 from torch import tensor
-
 from torch.utils.data import Dataset
 
 class PrivacyPoliciesDataset(Dataset):
@@ -71,9 +67,9 @@ class PrivacyPoliciesDataset(Dataset):
 
         b_dataset_data = self[b_dataset_idx_tensor]
 
-        s_dataset = PrivacyPoliciesDataset_all(s_dataset_data[0], s_dataset_data[1], labels)
+        s_dataset = PrivacyPoliciesDataset(s_dataset_data[0], s_dataset_data[1], labels)
 
-        b_dataset = PrivacyPoliciesDataset_all(b_dataset_data[0], b_dataset_data[1], labels)
+        b_dataset = PrivacyPoliciesDataset(b_dataset_data[0], b_dataset_data[1], labels)
 
         return s_dataset, b_dataset
     
