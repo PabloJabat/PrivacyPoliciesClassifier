@@ -138,11 +138,11 @@ def label_to_vector(label, labels):
         label: string, label that we want to transform into a vector.
         labels: dictionary, dictionary with the labels as the keys and indexes as the values.
     Returns:
-        vector: np.array, 1-D array of lenght 9.
+        vector: np.array, 1-D array of lenght 12.
         
     """
     
-    vector = np.zeros((9))
+    vector = np.zeros((12))
     
     try:
     
@@ -152,11 +152,11 @@ def label_to_vector(label, labels):
         
     except KeyError:
         
-        vector = np.zeros((9))
+        vector = np.zeros((12))
     
     return vector
 
-def get_glove_dicts(inputh_path, output_path, dims, read = False):
+def get_glove_dicts(input_path, output_path, dims, read = False):
     """
     
     This functions returns two dictionaries that process the glove.6B folder and gets the pretrained 
@@ -180,9 +180,9 @@ def get_glove_dicts(inputh_path, output_path, dims, read = False):
     
     word2idx_path = join(output_path, word2idx_path)
     
-    if isfile(word2vector_path) and isfile(word2idx_path) and read:
+    if isfile(word2vector_path) and read:
         
-        print("Loading from files word2vector_globe_{0}.pkl and word2idx_globe_{0}.pkl".format(dims))
+        print("Loading from file word2vector_globe_{}.pkl".format(dims))
 
         with open(word2vector_path,"rb") as word2vector_file:
         
@@ -200,7 +200,7 @@ def get_glove_dicts(inputh_path, output_path, dims, read = False):
 
         vectors = [np.zeros(dims)]
 
-        with open(join(inputh_path, inputh_path + "." + str(dims) + "d.txt")) as glove_file:
+        with open(join(input_path, input_path + "." + str(dims) + "d.txt")) as glove_file:
 
             for line in glove_file:
 
@@ -226,7 +226,99 @@ def get_glove_dicts(inputh_path, output_path, dims, read = False):
 
     return word2vector
 
-def get_weight_matrix(dictionary, word2vector, dims, output_path, read = False):
+def get_fast_text_dicts(input_path, output_path, dims, missing = True, read = False):
+    """
+    
+    This functions returns two dictionaries that process the fasttext folder and gets the pretrained 
+    embedding vectors.
+    
+    Args:
+        path: string, path to the folder containing the glove embeddings
+        dims: integer, embeddings dimensionality to use.
+        read: boolean, variable that allows us to decide wether to read from pre-processed files or not.
+    Returns:
+        word2vector: dictionary, the keys are the words an the values are the embeddings associated with that word.
+        word2idx: dictionary, the keys are the words and the values are the indexes associated with that word.
+    
+    """
+    
+    def append_from_file(words, word2idx, vectors, idx, input_path, file):
+        
+        with open(join(input_path, file)) as fast_text_file:
+
+            for line in fast_text_file:
+
+                split_line = line.split()
+
+                word = split_line[0]
+
+                words.append(word)
+
+                word2idx[word] = idx
+
+                vector = np.array(split_line[1:]).astype(np.float)
+
+                vectors.append(vector)
+                
+                idx += 1
+                
+        return words, word2idx, vectors, idx
+    
+    if missing:     
+    
+        word2vector_path = "word2vector_fast_text_" + str(dims) + "_nomissing.pkl"
+
+        word2vector_path = join(output_path, word2vector_path)
+
+        word2idx_path = "word2idx_fast_text_" + str(dims) + "_nomissing.pkl"
+
+        word2idx_path = join(output_path, word2idx_path)
+        
+    else:
+        
+        word2vector_path = "word2vector_fast_text_" + str(dims) + ".pkl"
+
+        word2vector_path = join(output_path, word2vector_path)
+
+        word2idx_path = "word2idx_fast_text_" + str(dims) + ".pkl"
+
+        word2idx_path = join(output_path, word2idx_path)
+    
+    if isfile(word2vector_path) and read:
+        
+        print("Loading from files word2vector_fast_text_{}.pkl".format(dims))
+
+        with open(word2vector_path,"rb") as word2vector_file:
+        
+            word2vector = pickle.load(word2vector_file)
+
+    else:
+        
+        print("Processing dataset ...")
+
+        words = [None]
+
+        word2idx = {None: 0}
+
+        idx = 1
+
+        vectors = [np.zeros(dims)]
+        
+        words, word2idx, vectors, idx = append_from_file(words, word2idx, vectors, idx, input_path, '.vec')     
+                
+        if missing:
+                        
+            words, word2idx, vectors, idx = append_from_file(words, word2idx, vectors, idx, input_path, '.vec_missing')
+                           
+        word2vector = {w: vectors[word2idx[w]] for w in words}
+        
+        with open(word2vector_path,"wb") as word2vector_file:
+        
+            pickle.dump(word2vector, word2vector_file)
+
+    return word2vector
+
+def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = True, read = False):
     """
 
     This function returns a matrix containing the weights that will be used as pretrained embeddings. It will read 
@@ -289,8 +381,10 @@ def get_weight_matrix(dictionary, word2vector, dims, output_path, read = False):
                 words_found += 1
 
             except KeyError:
+                
+                if oov_random:
 
-                weights_matrix[i] = np.random.normal(scale=0.6, size=(dims, ))
+                    weights_matrix[i] = np.random.normal(scale=0.6, size=(dims, ))                  
                 
                 word2idx[word] = i
 
@@ -324,6 +418,7 @@ def process_dataset(labels, word2idx, read = False):
         labels_matrices: list, a list of lists of lists containing the labels of the dataset. labels_matrices[i][j][k] ->
         "i" is for the file, "j" for the line and "k" for the boolean variable specifying 
         the presence of the a label.
+        
     """
     
     
