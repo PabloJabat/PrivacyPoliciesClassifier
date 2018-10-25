@@ -16,5 +16,7 @@ trained_models/*
 trained_models_pics/*
 embeddings_data/*
 datasets/*
+GoldStandard12
+GoldStandard12 Polisis
 !.keep
 !labels.pkl
