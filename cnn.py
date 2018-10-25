@@ -51,9 +51,9 @@ class CNN(nn.Module):
             
         self.relu = nn.ReLU()
         
-        Hu.insert(0, self.Co * len(self.Ks))
+        units = [self.Co * len(self.Ks)] + Hu
         
-        self.linear_layers = nn.ModuleList([nn.Linear(self.Hu[k],self.Hu[k+1]) for k in range(len(self.Hu)-1)])
+        self.linear_layers = nn.ModuleList([nn.Linear(units[k],units[k+1]) for k in range(len(units)-1)])
         
         self.linear_last = nn.Linear(self.Hu[-1], self.C)
         
@@ -203,7 +203,7 @@ class CNN(nn.Module):
 
         return epochs, train_losses, validation_losses
     
-    def print_results(self, train_dataset, validation_dataset, labels):
+    def print_results(self, train_dataset, validation_dataset, labels, threshold):
 
         y_train = train_dataset.labels_tensor
 
@@ -229,9 +229,13 @@ class CNN(nn.Module):
 
         f1_scores_train = [self.f1_score(y_train, y_hat_train, t)[0] for t in threshold_list]
 
-        precisions_train =[self.f1_score(y_train, y_hat_train, t)[1] for t in threshold_list]
+        precisions_train = [self.f1_score(y_train, y_hat_train, t)[1] for t in threshold_list]
 
         recalls_train = [self.f1_score(y_train, y_hat_train, t)[2] for t in threshold_list]
+        
+        count_train = y_train.sum(0).div(y_train.sum())
+        
+        count_valid = y_validation.sum(0).div(y_validation.sum())
 
         """
         
@@ -281,10 +285,10 @@ class CNN(nn.Module):
 
         plt.show()
 
-        # We show the F1, precision and recall for a threshold of 0.5
+        # We show the overall F1, precision and recall for a threshold of 0.5 given by the variable threshold
         f1, precision, recall = self.f1_score(y_validation, y_hat_validation, 0.5)
 
-        print("Scores with 0.5 threshold")
+        print("Scores with " + str(threshold) + " threshold")
 
         print("-" * 35 * 3)
 
@@ -296,21 +300,32 @@ class CNN(nn.Module):
 
         print("-" * 35 * 3)
 
-        best_f1_label, best_t_label = self.get_best_thresholds(y_validation, y_hat_validation, labels)
+        # We show the F1, precision and recall per label for a threshold given by the variable threshold
+        scores_list = self.f1_score_per_label(y_validation, y_hat_validation, threshold)
 
-        print("\n" + "F1 Score per Label")
+        print("\n" + "Score per label with " + str(threshold) + " threshold")
 
         print("-" * 35 * 3)
 
-        row_format ="{:<38}" * 3
+        row_format = "{:<48}" + "{:<10}" * 5
 
-        print(row_format.format("Label", "F1", "Threshold"))
+        print(row_format.format("Label", "F1", "Precision", "Recall", "Count T.", "Count V."))
 
         print("-" * 35 * 3)
 
         for label, index in labels.items():
-
-            print row_format.format(label, best_f1_label[index], best_t_label[index])
+            
+            f1_label = scores_list[0][index]
+            
+            precision_label = scores_list[1][index]
+            
+            recall_label = scores_list[2][index]
+            
+            ct_label = round(count_train[index], 2)
+            
+            cv_label = round(count_valid[index], 2)
+                      
+            print row_format.format(label, f1_label, precision_label, recall_label, ct_label, cv_label)
 
         # We save the figure into a picture
         fig.savefig(fname = join("trained_models_pics" ,self.cnn_name + '.png'), format = 'png')
@@ -347,7 +362,7 @@ class CNN(nn.Module):
         return best_f1_label, best_t_label
               
     @staticmethod    
-    def f1_score(y_true, y_pred, threshold, dim = 0, eps = 1e-9):
+    def f1_score(y_true, y_pred, threshold, macro = False, eps = 1e-9):
         """
 
         Computes the f1 score resulting from the comparison between y_true and y_pred after using the threshold set.
@@ -359,8 +374,7 @@ class CNN(nn.Module):
             row is the record i whereas the j-th column is the label j.
             threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned 
             to a record.
-            dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to 
-            set this parameter.
+            macro: bool, if false we will return the micro average but if true it will return the macro average.
             eps: double, it is just a very small value that avoids dividing by 0 when computing the precision and recall. 
 
         Returns:
@@ -374,22 +388,30 @@ class CNN(nn.Module):
 
         y_true = y_true.float()
 
-        y_pred = torch.ge(y_pred.float(), threshold).float()
+        true_positive_label = (y_pred * y_true).sum()
 
-        y_true = y_true.float()
+        precision_label = true_positive_label.div(y_pred.sum().add(eps))
 
-        true_positive = (y_pred * y_true).sum(dim = dim)
+        recall_label = true_positive_label.div(y_true.sum().add(eps))
+        
+        if macro:
+            
+            f1_macro = torch.mean((precision_label * recall_label).div(precision_label + recall_label + eps) * 2)
 
-        precision = true_positive.div(y_pred.sum(dim = dim).add(eps))
-
-        recall = true_positive.div(y_true.sum(dim = dim).add(eps))
-
-        f1 = torch.mean((precision * recall).div(precision + recall + eps) * 2)
-
-        return f1.item(), torch.mean(precision).item(), torch.mean(recall).item()
+            return f1_macro.item(), torch.mean(precision_label).item(), torch.mean(recall_label).item()
+        
+        else: 
+            
+            precision = precision_label.sum()
+            
+            recall = recall_label.sum()
+            
+            f1_micro = (precision * recall).div(precision + recall + eps) * 2
+            
+            return f1_micro.item(), precision.item(), recall.item()
     
     @staticmethod
-    def f1_score_per_label(y_true, y_pred, threshold, dim=0, eps=1e-9):
+    def f1_score_per_label(y_true, y_pred, threshold, eps=1e-9):
         """
 
         Computes the f1 score per label resulting from the comparison between y_true and y_pred after using the threshold 
@@ -402,8 +424,6 @@ class CNN(nn.Module):
             row is the record i whereas the j-th column is the label j.
             threshold: double, number between 0 and 1 that sets the threshold probability for a label to be truly assigned 
             to a record.
-            dim: int, it has to be either 0 or 1. It is dimension in which we sum the data. We do not recommend the user to 
-            set this parameter.
             eps: double, it is just a very small value that avoids dividing by 0 when computing the precision and recall.
 
         Returns:
@@ -417,11 +437,11 @@ class CNN(nn.Module):
 
         y_true = y_true.float()
 
-        true_positive = (y_pred * y_true).sum(dim=dim)
+        true_positive = (y_pred * y_true).sum(0)
 
-        precision = true_positive.div(y_pred.sum(dim=dim).add(eps))
+        precision = true_positive.div(y_pred.sum(0).add(eps))
 
-        recall = true_positive.div(y_true.sum(dim=dim).add(eps))
+        recall = true_positive.div(y_true.sum(0).add(eps))
 
         f1 = (precision * recall).div(precision + recall + eps) * 2
 
