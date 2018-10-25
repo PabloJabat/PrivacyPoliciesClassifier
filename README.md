@@ -6,4 +6,7 @@ You will also need to download the glove pretrained embeddings from [here](https
 
 To run the code you will need to use CNN Example.ipynb as the main.py is still under development. Inside the notebook you will find detailed explanations on how to train the models and you will be able to evaluate the precision and recall after its training. 
 
+Install:
+
+pickle
 
