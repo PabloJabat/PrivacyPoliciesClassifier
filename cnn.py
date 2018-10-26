@@ -315,11 +315,11 @@ class CNN(nn.Module):
 
         for label, index in labels.items():
             
-            f1_label = scores_list[0][index]
+            f1_label = round(scores_list[0][index], 2)
             
-            precision_label = scores_list[1][index]
+            precision_label = round(scores_list[1][index], 2)
             
-            recall_label = scores_list[2][index]
+            recall_label = round(scores_list[2][index], 2)
             
             ct_label = round(count_train[index], 2)
             
