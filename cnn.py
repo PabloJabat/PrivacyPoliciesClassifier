@@ -121,7 +121,7 @@ class CNN(nn.Module):
         
             pickle.dump(cnn_params, output_file)
         
-    def train_cnn(self, train_dataset, validation_dataset, lr = 0.02, epochs_num = 100, batch_size = 40, momentum = 0.9):
+    def train_cnn(self, train_dataset, validation_dataset, lr = 0.02, epochs_num = 100, batch_size = 40, alpha = 0,momentum = 0.9):
         """
 
         This function trains a CNN model using gradient descent with the posibility of using momentum. 
@@ -139,7 +139,7 @@ class CNN(nn.Module):
 
         """
 
-        optimizer = SGD(self.parameters(), lr = lr, momentum = momentum)
+        optimizer = SGD(self.parameters(), lr = lr, weight_decay = alpha, momentum = momentum)
 
         criterion = nn.BCELoss()
 
