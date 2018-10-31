@@ -99,7 +99,7 @@ def get_tokens(inputh_path, output_path, read = False):
         
         with open(dictionary_path,"rb") as dictionary_file:
         
-            dictionary = pickle.load(dictionary_file)
+            word2idx = pickle.load(dictionary_file)
         
     else:
         
@@ -122,12 +122,20 @@ def get_tokens(inputh_path, output_path, read = False):
                 a[1] = map(lower,set(nltk.word_tokenize(a[1])))
 
                 dictionary = dictionary.union(a[1])
+                
+        dictionary = sorted(dictionary)
+        
+        word2idx_dictionary = {None: 0}
+        
+        for i, word in enumerate(dictionary,1):
+                
+                word2idx_dictionary[word] = i
 
         with open(dictionary_path, "wb") as dictionary_file:
 
-            pickle.dump(dictionary, dictionary_file)
+            pickle.dump(word2idx_dictionary, dictionary_file)
             
-    return dictionary
+    return word2idx_dictionary
 
 def label_to_vector(label, labels): 
     """
@@ -325,36 +333,26 @@ def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = T
     weights_matrix.pkl file as long as it exists. This will make the code much faster. 
 
     Args:
-        dictionary: set, set containing all the words present in the dataset.
+        dictionary: dictionary, dictionary containing a word2idx of all the words present in the dataset.
         word2vector: dictionary, the keys are the words and the values are the embeddings.
         dims: integer, dimensionality of the embeddings.
         read: boolean, variable that allows us to decide wether to read from pre-processed files or not.
     Returns:
         weights_matrix: np.array, matrix containing all the embeddings.
-        word2idx: dictionary, the keys are the words and the values the index where we can find the vector in 
-        weights_matrix
 
     """
     
     weights_path = "weights_matrix_" + str(dims) + ".pkl"
     
     weights_path = join(output_path, weights_path)
-    
-    word2idx_path = "word2idx_" + str(dims) + ".pkl"
-    
-    word2idx_path = join(output_path, word2idx_path)
 
-    if isfile(weights_path) and isfile(word2idx_path) and read:
+    if isfile(weights_path) and read:
         
         print("Loading from file weights_matrix.pkl")
 
         with open(weights_path,"rb") as weights_file:
         
             weights_matrix = pickle.load(weights_file)
-
-        with open(word2idx_path,"rb") as word2idx_file:
-        
-            word2idx = pickle.load(word2idx_file)
 
     else:
         
@@ -365,18 +363,14 @@ def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = T
         matrix_len = len(dictionary) + 1
 
         weights_matrix = np.zeros((matrix_len, dims))
-        
-        word2idx = {None: 0}
 
         words_found = 0
 
-        for i, word in enumerate(dictionary,1):
+        for word, i in dictionary.items():
 
             try: 
 
                 weights_matrix[i] = word2vector[word]
-                
-                word2idx[word] = i
 
                 words_found += 1
 
@@ -385,18 +379,12 @@ def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = T
                 if oov_random:
 
                     weights_matrix[i] = np.random.normal(scale=0.6, size=(dims, ))                  
-                
-                word2idx[word] = i
 
         with open(weights_path,"wb") as weights_file:
 
             pickle.dump(weights_matrix, weights_file)
             
-        with open(word2idx_path,"wb") as word2idx_file:
-
-            pickle.dump(word2idx, word2idx_file)
-            
-    return (weights_matrix, word2idx)
+    return weights_matrix
 
 def process_dataset(labels, word2idx, read = False):
     """
@@ -419,8 +407,7 @@ def process_dataset(labels, word2idx, read = False):
         "i" is for the file, "j" for the line and "k" for the boolean variable specifying 
         the presence of the a label.
         
-    """
-    
+    """    
     
     """
     
