@@ -80,6 +80,28 @@ class PrivacyPoliciesDataset(Dataset):
         with open(path, "wb") as dataset_file:
 
             pickle.dump(self, dataset_file)
+            
+    def labels_stats(self):
+        
+        p_labels =  self.labels_tensor.sum(0)
+        
+        total_labels = int(p_labels.sum())
+        
+        num_segments = len(self)
+        
+        print('Num of segments: {}'.format(num_segments))
+        
+        print('Num of labels: {}'.format(total_labels))
+        
+        print('Percentages with respect to number of segments ... ')
+        
+        for label, idx in self.labels.items():
+            
+            num_p = int(p_labels[idx])
+            
+            pct = round(100 * p_labels[idx] / num_segments, 2)
+            
+            print('{}. {} : {} ({}%)'.format(idx, label, num_p, pct))
     
     @staticmethod
     def unpickle_dataset(path):
