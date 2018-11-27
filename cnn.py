@@ -121,7 +121,7 @@ class CNN(nn.Module):
         
             pickle.dump(cnn_params, output_file)
         
-    def train_cnn(self, train_dataset, validation_dataset, lr = 0.02, epochs_num = 100, batch_size = 40, alpha = 0,momentum = 0.9):
+    def train(self, train_dataset, validation_dataset, lr = 0.02, epochs_num = 100, batch_size = 40, alpha = 0, momentum = 0.9):
         """
 
         This function trains a CNN model using gradient descent with the posibility of using momentum. 
@@ -203,8 +203,268 @@ class CNN(nn.Module):
 
         return epochs, train_losses, validation_losses
     
-    def print_results(self, train_dataset, validation_dataset, labels, threshold):
+    def train_label(self, train_dataset, validation_dataset, label, lr = 0.02, epochs_num = 100, batch_size = 40, alpha = 0, momentum = 0.9):
+        """
 
+        This function trains a CNN model using gradient descent with the posibility of using momentum. 
+
+        Args:
+            model: cnn.CNN, an instance of a model of the class cnn.CNN 
+            train_dataset: Dataset, Dataset containing the data that will be used for training
+            validation_dataset: Dataset, Dataset containing the data that will be used for validating the model
+            lr: double, learning rate that we want to use in the learning algorithm
+            epochs_num: integer, number of epochs
+            momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm    
+        Returns:
+            epochs: list, list containing all the epochs
+            losses: list, list containing the loss at the beginning of each epoch
+
+        """
+
+        label_name = train_dataset.labels.items()[label][0]
+        
+        print("Training label {} ... ".format(label_name))
+        
+        optimizer = SGD(self.parameters(), lr = lr, weight_decay = alpha, momentum = momentum)
+
+        criterion = nn.BCELoss()
+
+        train_losses = []
+
+        validation_losses = []
+
+        epochs = []
+
+        start = time.time()
+
+        remaining_time = 0
+
+        train_dataloader = DataLoader(train_dataset, batch_size = batch_size, collate_fn = PPD.collate_data)
+
+        for epoch in range(epochs_num):
+
+            for i_batch, sample_batched in enumerate(train_dataloader):
+
+                input = sample_batched[0]
+
+                target = sample_batched[1][:,label].unsqueeze(1).float()
+
+                self.zero_grad()
+
+                output = self(input)
+
+                train_loss = criterion(output, target)
+
+                train_loss.backward()
+
+                optimizer.step()
+
+            validation_segments, validation_labels = PPD.collate_data(validation_dataset)
+
+            validation_loss = criterion(self(validation_segments.long()), validation_labels[:,label].unsqueeze(1).float())
+
+            end = time.time()
+
+            remaining_time = remaining_time * 0.90 + ((end - start) * (epochs_num - epoch + 1) / (epoch + 1)) * 0.1
+
+            remaining_time_corrected = remaining_time / (1 - (0.9 ** (epoch + 1)))
+
+            epoch_str = "last epoch finished: " + str(epoch)
+
+            progress_str = "progress: " + str((epoch + 1) * 100 / epochs_num) + "%"
+
+            time_str = "time: " + str(remaining_time_corrected / 60) + " mins"
+
+            sys.stdout.write("\r" + epoch_str + " -- " + progress_str + " -- " + time_str)
+
+            sys.stdout.flush()
+
+            train_losses.append(train_loss.item())
+
+            validation_losses.append(validation_loss.item())
+
+            epochs.append(epoch)
+
+        print("\n" + "Training completed. Total training time: " + str(round((end - start) / 60, 2)) + " mins")
+
+        return epochs, train_losses, validation_losses
+    
+    def train_label_weigthed(self, train_dataset, validation_dataset, label, lr = 0.02, epochs_num = 100, batch_size = 40, alpha = 0, momentum = 0.9):
+        """
+
+        This function trains a CNN model using gradient descent with the posibility of using momentum. 
+
+        Args:
+            model: cnn.CNN, an instance of a model of the class cnn.CNN 
+            train_dataset: Dataset, Dataset containing the data that will be used for training
+            validation_dataset: Dataset, Dataset containing the data that will be used for validating the model
+            lr: double, learning rate that we want to use in the learning algorithm
+            epochs_num: integer, number of epochs
+            momentum: double, momentum paramenter that tunes the momentum gradient descent algorithm    
+        Returns:
+            epochs: list, list containing all the epochs
+            losses: list, list containing the loss at the beginning of each epoch
+
+        """
+                
+        def get_proportions(dataset):
+            
+            positive_label = dataset.labels_tensor[:,label].sum()
+        
+            negative_label = (1 - dataset.labels_tensor[:,label]).sum()
+            
+            total_examples = positive_label + negative_label
+            
+            imbalance = abs(positive_label - 0.5) > 0.4
+        
+            if imbalance:
+            
+                if positive_label < negative_label:
+                
+                    w_p = 1
+                
+                    w_n = positive_label / negative_label
+                
+                else:
+                
+                    w_p = negative_label / positive_label
+                
+                    w_n = 1
+            
+            else:
+            
+                w_p = w_n = 1
+                
+            return w_p, w_n
+            
+        def get_w(labels, w_p, w_n):
+            
+            positives = labels
+            
+            negatives = 1 - labels
+            
+            w = w_p * positives + w_n * negatives
+            
+            return w
+        
+#         positive_label = train_dataset.labels_tensor[:,label].sum()
+        
+#         negative_label = (1 - train_dataset.labels_tensor[:,label]).sum()
+        
+#         total_examples = positive_label + negative_label
+        
+#         print('num examples {}'.format(positive_label + negative_label))
+        
+#         print('% positive labels: {}'.format(positive_label/total_examples))
+        
+#         print('% negative labels: {}'.format(negative_label/total_examples))
+        
+#         imbalance = abs(positive_label - 0.5) > 0.4
+        
+#         if imbalance:
+            
+#             if positive_label < negative_label:
+                
+#                 w_p = 1
+                
+#                 w_n = positive_label / negative_label
+                
+#             else:
+                
+#                 w_p = negative_label / positive_label
+                
+#                 w_n = 1
+            
+#         else:
+            
+#             w_p = w_n = 1
+            
+#         print('w_p: {}'.format(w_p))
+        
+#         print('w_n: {}'.format(w_n))
+
+        w_p, w_n = get_proportions(train_dataset)        
+        
+        label_name = train_dataset.labels.items()[label][0]
+        
+        print("Training label {} ... ".format(label_name))
+        
+        optimizer = SGD(self.parameters(), lr = lr, weight_decay = alpha, momentum = momentum)
+
+        train_losses = []
+
+        validation_losses = []
+
+        epochs = []
+
+        start = time.time()
+
+        remaining_time = 0
+
+        train_dataloader = DataLoader(train_dataset, batch_size = batch_size, collate_fn = PPD.collate_data)
+        
+        validation_segments, validation_labels = PPD.collate_data(validation_dataset)
+        
+        weight_matrix_v = get_w(validation_labels[:,label].unsqueeze(1), w_p, w_n)
+        
+        criterion_v = nn.BCELoss(weight=weight_matrix_v.float())
+        
+        print('w_p: {} and w_n: {}'.format(w_p, w_n))
+
+        for epoch in range(epochs_num):
+
+            for i_batch, sample_batched in enumerate(train_dataloader):
+
+                input = sample_batched[0]
+
+                target = sample_batched[1][:,label].unsqueeze(1)
+                
+                weight_matrix = w_p * target + w_n * (1 - target)
+                
+                criterion = nn.BCELoss(weight=weight_matrix.float())
+
+                self.zero_grad()
+
+                output = self(input)
+
+                train_loss = criterion(output, target.float())
+
+                train_loss.backward()
+
+                optimizer.step()
+
+            validation_loss = criterion_v(self(validation_segments.long()), validation_labels[:,label].unsqueeze(1).float())
+
+            end = time.time()
+
+            remaining_time = remaining_time * 0.90 + ((end - start) * (epochs_num - epoch + 1) / (epoch + 1)) * 0.1
+
+            remaining_time_corrected = remaining_time / (1 - (0.9 ** (epoch + 1)))
+
+            epoch_str = "last epoch finished: " + str(epoch)
+
+            progress_str = "progress: " + str((epoch + 1) * 100 / epochs_num) + "%"
+
+            time_str = "time: " + str(remaining_time_corrected / 60) + " mins"
+
+            sys.stdout.write("\r" + epoch_str + " -- " + progress_str + " -- " + time_str)
+
+            sys.stdout.flush()
+
+            train_losses.append(train_loss.item())
+
+            validation_losses.append(validation_loss.item())
+
+            epochs.append(epoch)
+
+        print("\n" + "Training completed. Total training time: " + str(round((end - start) / 60, 2)) + " mins")
+
+        return epochs, train_losses, validation_losses
+    
+    def print_results(self, train_dataset, validation_dataset, threshold):
+
+        labels = train_dataset.labels
+        
         y_train = train_dataset.labels_tensor
 
         y_validation = validation_dataset.labels_tensor
@@ -233,14 +493,211 @@ class CNN(nn.Module):
 
         recalls_train = [self.f1_score(y_train, y_hat_train, t)[2] for t in threshold_list]
         
-        count_train = y_train.sum(0).div(y_train.sum())
+        count_train = y_train.sum(0).div(len(y_train))
         
-        count_valid = y_validation.sum(0).div(y_validation.sum())
+        print("{} Labels T".format(y_train.sum()))
+        
+        print("{} Segments T".format(len(y_train)))
+        
+        count_valid = y_validation.sum(0).div(len(y_validation))
+              
+        print("{} Labels V".format(y_validation.sum()))
+        
+        print("{} Segments V".format(len(y_validation)))
 
         """
-        
         Here comes the pyplot code
+        """
+
+        fig = plt.figure(figsize=(15,4))
+
+        # We start with the three pyplot axis we want. One for F1, another for precision and one last one for recall
+        ax_f1 = fig.add_subplot(131)
+
+        ax_precision = fig.add_subplot(132)
+
+        ax_recall = fig.add_subplot(133)
+
+        # We now plot all the data in te corresponding axis
+        ax_f1.plot(threshold_list, f1_scores_validation, label='validation')
+
+        ax_f1.plot(threshold_list, f1_scores_train, label='train')
+
+        ax_f1.set_title('F1 Score vs Threshold')
+
+        ax_f1.set_ylim(0,1.05)
+
+        ax_f1.legend()
+
+        ax_precision.plot(threshold_list, precisions_validation, label='validation')
+
+        ax_precision.plot(threshold_list, precisions_train, label='train')
+
+        ax_precision.set_title('Precision vs Threshold')
+
+        ax_precision.set_ylim(0,1.05)
+
+        ax_precision.legend()
+
+        ax_recall.plot(threshold_list, recalls_validation, label='validation')
+
+        ax_recall.plot(threshold_list, recalls_train, label='train')
+
+        ax_recall.set_title('Recall vs Threshold')
+
+        ax_recall.set_ylim(0,1.05)
+
+        ax_recall.legend()
+
+        plt.show()
+
+        # We show the overall F1, precision and recall for a threshold of 0.5 given by the variable threshold
         
+        f1_micro, precision_micro, recall_micro = self.f1_score(y_validation, y_hat_validation, 0.5)
+        
+        f1_macro, precision_macro, recall_macro = self.f1_score(y_validation, y_hat_validation, 0.5, macro = True)
+
+        print("Scores with " + str(threshold) + " threshold")
+
+        print("-" * 35 * 3)
+
+        print("f1 micro        |" + str(f1_micro))
+
+        print("precision micro |" + str(precision_micro))
+
+        print("recall micro    |" + str(recall_micro))
+
+        print("-" * 35 * 3)
+
+        print("f1 macro        |" + str(f1_macro))
+
+        print("precision macro |" + str(precision_macro))
+
+        print("recall macro    |" + str(recall_macro))
+
+        print("-" * 35 * 3)
+
+
+        # We show the F1, precision and recall per label for a threshold given by the variable threshold
+        scores_list = self.f1_score_per_label(y_validation, y_hat_validation, threshold)
+
+        print("\n" + "Score per label with " + str(threshold) + " threshold")
+
+        print("-" * 35 * 3)
+
+        row_format = "{:<48}" + "{:<10}" * 5
+
+        print(row_format.format("Label", "F1", "Precision", "Recall", "Count T.", "Count V."))
+
+        print("-" * 35 * 3)
+
+        for label, index in labels.items():
+            
+            f1_label = round(scores_list[0][index], 2)
+            
+            precision_label = round(scores_list[1][index], 2)
+            
+            recall_label = round(scores_list[2][index], 2)
+            
+            ct_label = round(count_train[index], 2)
+            
+            cv_label = round(count_valid[index], 2)
+                      
+            print row_format.format(label, f1_label, precision_label, recall_label, ct_label, cv_label)
+
+        # We save the figure into a picture
+        fig.savefig(fname = join("trained_models_pics" ,self.cnn_name + '.png'), format = 'png')
+        
+    def print_results_best_t(self, validation_dataset, best_t):
+        
+        y_validation = validation_dataset.labels_tensor
+
+        x_validation = PPD.collate_data(validation_dataset)[0]
+
+        y_hat_validation = self(x_validation)
+        
+        labels = validation_dataset.labels
+        
+        scores_list = self.f1_score_per_label(y_validation, y_hat_validation, best_t)
+        
+        row_format = "{:<48}" + "{:<10}" * 3
+
+        print(row_format.format("Label", "F1", "Precision", "Recall"))
+
+        print("-" * 35 * 3)
+
+        for label, index in labels.items():
+            
+            f1_label = round(scores_list[0][index], 2)
+            
+            precision_label = round(scores_list[1][index], 2)
+            
+            recall_label = round(scores_list[2][index], 2)
+                      
+            print row_format.format(label, f1_label, precision_label, recall_label)
+            
+        f1_mean = torch.mean(scores_list[0]).item()
+        
+        precision_mean = torch.mean(scores_list[1]).item()
+        
+        recall_mean = torch.mean(scores_list[2]).item()
+        
+        print('macro averages')
+        
+        print('F1: {}'.format(f1_mean))
+        
+        print('Precision: {}'.format(precision_mean))
+        
+        print('Recall: {}'.format(recall_mean))
+        
+    def print_results_label(self, train_dataset, validation_dataset, label, threshold):
+
+        labels = train_dataset.labels
+        
+        label_name = train_dataset.labels.items()[label][0]
+        
+        y_train = train_dataset.labels_tensor[:,label].unsqueeze(1)
+
+        y_validation = validation_dataset.labels_tensor[:,label].unsqueeze(1)
+
+        x_train = PPD.collate_data(train_dataset)[0]
+
+        x_validation = PPD.collate_data(validation_dataset)[0]
+
+        y_hat_train = self(x_train)
+
+        y_hat_validation = self(x_validation)
+
+        # This will be the x axis
+        threshold_list = np.arange(0.0, 1, 0.01)
+
+        # These will be the y axis data
+        f1_scores_validation = [self.f1_score(y_validation, y_hat_validation, t)[0] for t in threshold_list]
+
+        precisions_validation = [self.f1_score(y_validation, y_hat_validation, t)[1] for t in threshold_list]
+
+        recalls_validation = [self.f1_score(y_validation, y_hat_validation, t)[2] for t in threshold_list]
+
+        f1_scores_train = [self.f1_score(y_train, y_hat_train, t)[0] for t in threshold_list]
+
+        precisions_train = [self.f1_score(y_train, y_hat_train, t)[1] for t in threshold_list]
+
+        recalls_train = [self.f1_score(y_train, y_hat_train, t)[2] for t in threshold_list]
+        
+        count_train = y_train.sum(0).div(len(y_train))
+        
+        print("{} Labels T".format(y_train.sum()))
+        
+        print("{} Segments T".format(len(y_train)))
+        
+        count_valid = y_validation.sum(0).div(len(y_validation))
+              
+        print("{} Labels V".format(y_validation.sum()))
+        
+        print("{} Segments V".format(len(y_validation)))
+
+        """
+        Here comes the pyplot code
         """
 
         fig = plt.figure(figsize=(15,4))
@@ -300,33 +757,6 @@ class CNN(nn.Module):
 
         print("-" * 35 * 3)
 
-        # We show the F1, precision and recall per label for a threshold given by the variable threshold
-        scores_list = self.f1_score_per_label(y_validation, y_hat_validation, threshold)
-
-        print("\n" + "Score per label with " + str(threshold) + " threshold")
-
-        print("-" * 35 * 3)
-
-        row_format = "{:<48}" + "{:<10}" * 5
-
-        print(row_format.format("Label", "F1", "Precision", "Recall", "Count T.", "Count V."))
-
-        print("-" * 35 * 3)
-
-        for label, index in labels.items():
-            
-            f1_label = round(scores_list[0][index], 2)
-            
-            precision_label = round(scores_list[1][index], 2)
-            
-            recall_label = round(scores_list[2][index], 2)
-            
-            ct_label = round(count_train[index], 2)
-            
-            cv_label = round(count_valid[index], 2)
-                      
-            print row_format.format(label, f1_label, precision_label, recall_label, ct_label, cv_label)
-
         # We save the figure into a picture
         fig.savefig(fname = join("trained_models_pics" ,self.cnn_name + '.png'), format = 'png')
 
@@ -359,8 +789,8 @@ class CNN(nn.Module):
 
             best_t_label[index] = best_t
 
-        return best_f1_label, best_t_label
-              
+        return best_f1_label, best_t_label 
+    
     @staticmethod    
     def f1_score(y_true, y_pred, threshold, macro = False, eps = 1e-9):
         """
@@ -388,26 +818,36 @@ class CNN(nn.Module):
 
         y_true = y_true.float()
 
-        true_positive_label = (y_pred * y_true).sum()
+        tp_l = (y_pred * y_true).sum(0).float()
 
-        precision_label = true_positive_label.div(y_pred.sum().add(eps))
+        fp_l = (y_pred * (1 - y_true)).sum(0).float()
 
-        recall_label = true_positive_label.div(y_true.sum().add(eps))
-        
+        fn_l = ((1 - y_pred) * y_true).sum(0).float()
+
+        precision_label = tp_l.div(tp_l + fp_l + eps)
+
+        recall_label = tp_l.div(tp_l + fn_l + eps)
+
         if macro:
-            
+
             f1_macro = torch.mean((precision_label * recall_label).div(precision_label + recall_label + eps) * 2)
 
             return f1_macro.item(), torch.mean(precision_label).item(), torch.mean(recall_label).item()
-        
+
         else: 
-            
-            precision = precision_label.sum()
-            
-            recall = recall_label.sum()
-            
+
+            tp = tp_l.sum()
+
+            fp = fp_l.sum()
+
+            fn = fn_l.sum()
+
+            precision = tp / (tp + fp)
+
+            recall = tp / (tp + fn)
+
             f1_micro = (precision * recall).div(precision + recall + eps) * 2
-            
+
             return f1_micro.item(), precision.item(), recall.item()
     
     @staticmethod
@@ -432,17 +872,21 @@ class CNN(nn.Module):
             recall: list, the resulting recall per label (it will be a number between 0 and 1)
 
         """
-
+        
         y_pred = torch.ge(y_pred.float(), threshold).float()
 
         y_true = y_true.float()
 
-        true_positive = (y_pred * y_true).sum(0)
+        tp_l = (y_pred * y_true).sum(0).float()
 
-        precision = true_positive.div(y_pred.sum(0).add(eps))
+        fp_l = (y_pred * (1 - y_true)).sum(0).float()
 
-        recall = true_positive.div(y_true.sum(0).add(eps))
+        fn_l = ((1 - y_pred) * y_true).sum(0).float()
 
-        f1 = (precision * recall).div(precision + recall + eps) * 2
+        precision_label = tp_l.div(tp_l + fp_l + eps)
 
-        return f1, precision, recall
+        recall_label = tp_l.div(tp_l + fn_l + eps)
+
+        f1_label = (precision_label * recall_label).div(precision_label + recall_label + eps) * 2
+
+        return f1_label, precision_label, recall_label
