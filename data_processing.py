@@ -99,7 +99,7 @@ def get_tokens(inputh_path, output_path, read = False):
         
         with open(dictionary_path,"rb") as dictionary_file:
         
-            word2idx = pickle.load(dictionary_file)
+            word2idx_dictionary = pickle.load(dictionary_file)
         
     else:
         
@@ -294,7 +294,7 @@ def get_fast_text_dicts(input_path, output_path, dims, missing = True, read = Fa
     
     if isfile(word2vector_path) and read:
         
-        print("Loading from files word2vector_fast_text_{}.pkl".format(dims))
+        print("Loading from file {}".format(word2vector_path))
 
         with open(word2vector_path,"rb") as word2vector_file:
         
@@ -326,7 +326,7 @@ def get_fast_text_dicts(input_path, output_path, dims, missing = True, read = Fa
 
     return word2vector
 
-def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = True, read = False):
+def get_weight_matrix(dims, output_path, read = False, oov_random = True, **kwargs):
     """
 
     This function returns a matrix containing the weights that will be used as pretrained embeddings. It will read 
@@ -348,23 +348,27 @@ def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = T
 
     if isfile(weights_path) and read:
         
-        print("Loading from file weights_matrix.pkl")
+        print("Loading from file weights_matrix_{}.pkl".format(dims))
 
         with open(weights_path,"rb") as weights_file:
         
             weights_matrix = pickle.load(weights_file)
-
+        
     else:
         
         print("Processing dataset ...")
         
         # We add 1 to onclude the None value
         
+        dictionary = kwargs['dictionary']
+        
+        word2vector = kwargs['word2vector']
+        
         matrix_len = len(dictionary) + 1
 
         weights_matrix = np.zeros((matrix_len, dims))
 
-        words_found = 0
+        oov_words = 0
 
         for word, i in dictionary.items():
 
@@ -372,13 +376,17 @@ def get_weight_matrix(dictionary, word2vector, dims, output_path, oov_random = T
 
                 weights_matrix[i] = word2vector[word]
 
-                words_found += 1
-
             except KeyError:
                 
                 if oov_random:
 
-                    weights_matrix[i] = np.random.normal(scale=0.6, size=(dims, ))                  
+                    weights_matrix[i] = np.random.normal(scale=0.6, size=(dims, ))
+                    
+                oov_words += 1
+                
+        if oov_words != 0:
+            
+            print("Some words were missing in the word2vector. {} words were not found.".format(oov_words))
 
         with open(weights_path,"wb") as weights_file:
 
