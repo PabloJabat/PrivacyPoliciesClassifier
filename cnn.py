@@ -603,7 +603,7 @@ class CNN(nn.Module):
             
             cv_label = round(count_valid[index], 2)
                       
-            print row_format.format(label, f1_label, precision_label, recall_label, ct_label, cv_label)
+            print(row_format.format(label, f1_label, precision_label, recall_label, ct_label, cv_label))
 
         # We save the figure into a picture
         fig.savefig(fname = join("trained_models_pics" ,self.cnn_name + '.png'), format = 'png')
