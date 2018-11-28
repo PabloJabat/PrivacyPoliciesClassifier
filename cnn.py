@@ -634,7 +634,7 @@ class CNN(nn.Module):
             
             recall_label = round(scores_list[2][index], 2)
                       
-            print row_format.format(label, f1_label, precision_label, recall_label)
+            print(row_format.format(label, f1_label, precision_label, recall_label))
             
         f1_mean = torch.mean(scores_list[0]).item()
         
