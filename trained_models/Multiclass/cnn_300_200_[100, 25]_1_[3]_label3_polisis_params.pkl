@@ -1,0 +1,27 @@
+(dp0
+S'Ks'
+p1
+(lp2
+I3
+asS'vocab_size'
+p3
+I6842
+sS'C'
+p4
+I1
+sS'Co'
+p5
+I200
+sS'name'
+p6
+S'cnn_300_200_[100, 25]_1_[3]_label3_polisis'
+p7
+sS'Hu'
+p8
+(lp9
+I100
+aI25
+asS'emb_dim'
+p10
+I300
+s.
