@@ -133,6 +133,22 @@ def best_metrics(y, y_pred):
     
     return f1s, ps, rs, ts
 
+def save_metrics(y, y_pred, path):
+    
+    def label_scores(y, y_pred, label, idx):          
+    
+        f1s, ps, rs, ts = predict._metrics_wrt_t(y[:,label], y_pred[:,label])
+        best_scores = f1s[idx], ps[idx], rs[idx]
+        scores_05 = predict._metrics_t(y[:,label], y_pred[:,label], 0.5)
+        return scores_05 + best_scores
+    
+    with open(path, 'w') as f:
+        writer = csv.writer(f)
+        idxs = predict._best_t_idx(y, y_pred)
+        for label, idx in zip(range(12), idxs):
+            scores = label_scores(y, y_pred, label, idx)
+            writer.writerows([scores])
+
 def load_model(path, label):
     
     #We set the name of the model and its parameters
