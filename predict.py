@@ -1,60 +1,180 @@
 from cnn import CNN
+from privacy_policies_dataset import PrivacyPoliciesDataset as PPD
 from os.path import join, isfile
 from os import listdir
+from collections import OrderedDict
+import time
 import torch
 import pickle
-from privacy_policies_dataset import PrivacyPoliciesDataset as PPD
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _cm(y, y_hat):
+    
+    #Empty dict where the data will be stored
+    cm = OrderedDict()
+    
+    #Computation fo true positives, false positives, true negatives and false negatives
+    tp = (y * y_hat).sum()
+    tn = ((1 - y) * (1 - y_hat)).sum()
+    fp = (y_hat * (1 - y)).sum()
+    fn = ((1 - y_hat) * y).sum()
+    
+    #Storage of results in the dictionary
+    cm['TP'] = tp.item()
+    cm['TN'] = tn.item()
+    cm['FP'] = fp.item()
+    cm['FN'] = fn.item()
+    
+    return cm
+
+def _cms(y, y_hat):
+    
+    #Empty tensor where the data will be stored
+    cms = torch.tensor([])
+    
+    #Computation of cm for every label and pack them in cms
+    for label in range(12):
+        cm = torch.tensor(_cm(y[:,label], y_hat[:,label]).values()).unsqueeze(1)
+        cms = torch.cat([cms,cm],1)
+        
+    return cms
+
+def _metrics(cm):  
+    
+    tp, tn, fp, fn = cm.values()
+    eps = 1e-10
+    
+    #Computation of F1 score, precision and recall
+    p = tp / (tp + fp + eps)
+    r = tp / (tp + fn + eps)
+    f1 = 2 * p * r / (p + r + eps)
+    
+    return f1, p, r
+
+def _metrics_t(y, y_pred, t):
+    
+    y_hat = y_pred > t
+    cm = _cm(y, y_hat.double())
+    
+    return _metrics(cm)    
+    
+
+def _metrics_wrt_t(y, y_pred):    
+
+    #Initialization of range of thresholds and empty lists to store results
+    ts = np.arange(0, 1, 0.01)
+    f1s = []
+    ps = []
+    rs = []
+
+    #loop that computes metrics for every threshold
+    for t in ts:
+
+        f1, p, r = _metrics_t(y, y_pred, t)
+        
+        #Storage of results
+        f1s.append(f1)
+        ps.append(p)
+        rs.append(r)
+        
+    return f1s, ps, rs, ts
+
+def _best_t_idx(y, y_pred):
+    
+    idxs = []
+
+    for label in range(12):
+       
+        f1, p, r, ts = _metrics_wrt_t(y[:,label], y_pred[:,label])
+        index = np.array(f1).argmax().item()
+        idxs.append(index)
+
+    return idxs
+
+def macro_metrics(y, y_hat):
+    
+    eps = 1e-10
+    cms = _cms(y, y_hat)
+    ps = cms[0] / (cms[0] + cms[2] + eps)
+    rs = cms[0] / (cms[0] + cms[3] + eps)
+    p = torch.mean(ps)
+    r = torch.mean(rs)
+    f1 = torch.mean(2 * ps * rs / (ps + rs + eps))
+    
+    return f1, p, r
+
+def micro_metrics(y, y_hat):
+    
+    eps = 1e-10
+    cms = _cms(y, y_hat)
+    cm = cms.sum(1)
+    p = cm[0] / (cm[0] + cm[2] + eps)
+    r = torch.mean(cm[0] / (cm[0] + cm[3] + eps))
+    f1 = torch.mean(2 * p * r / (p + r + eps))
+    
+    return f1, p, r
+
+def best_metrics(y, y_pred):
+    
+    f1s = []
+    ps = []
+    rs = []
+    ts = []
+    idxs = _best_t_idx(y, y_pred)
+    
+    for idx, label in zip(idxs, range(12)):
+        
+        f1, p, r, t = _metrics_wrt_t(y[:,label], y_pred[:,label])
+        f1s.append(f1[idx])
+        ps.append(p[idx])
+        rs.append(r[idx])
+        ts.append(t[idx])
+    
+    return f1s, ps, rs, ts
 
 def load_model(path, label):
-
-    #We make the imports needed for this function
-    import pickle
-    import torch
-    from os.path import join
-
+    
     #We set the name of the model and its parameters
-    models_files = join(path, 'cnn_300_200_[100, 25]_1_[3]_label{}_polisis_state.pt')
+    models_files = join(path, 'cnn_300_200_[100, 25]_1_[3]_label{}_polisis_state.pt')  
     model_file = models_files.format(label)
     params_files = join(path, 'cnn_300_200_[100, 25]_1_[3]_label{}_polisis_params.pkl')
     params_file = params_files.format(label)
-
+    
     #We now load the parameters
     with open(params_file, 'rb') as f:
         params = pickle.load(f)
-
+        
     #We now load the model and pass the parameters
     model = CNN(**params)
     model.load_state_dict(torch.load(model_file))
-
+    
     return model
 
 def load_12CNN_model(path):
-
-    from collections import OrderedDict
+    
     #We instantiate an empty dictionary that will contain the models
     model12cnn = OrderedDict()
     for label in range(12):
         model12cnn['model{}'.format(label)] = load_model(path, label)
-
+        
     return model12cnn
 
-def predict(data, models, threshold=0.5):
-
-    #We import time to compute time of prediction
-    import time
-    import torch
-
+def predict(data, models):
+    
+    #We instantiate an empty y and instantiate the x
     x = PPD.collate_data(data)[0]
     y = torch.tensor([])
-
+    
+    #We start a timer to compute predicions time and compute them
     start = time.time()
     for key, model in models.items():
         y_label = model(x)
-        y = torch.cat([y, y_label])
+        y = torch.cat([y, y_label],1)
     end = time.time()
-
+        
     print("Prediction time: {} seconds". format(end - start))
-
+    
     return y
 
 def main():
@@ -76,8 +196,22 @@ def main():
 
     #We predict the labels
     predictions = predict(data, models)
+    
+    #Computation of all metrics 
+    f1s, ps, rs, ts = _metrics_wrt_t(data.labels_tensor,predictions)
+    figure = plt.figure(figsize=(18,5))
+    figure.suptitle('12-CNN Micro Averages with respect t')
+    ax_f1 = figure.add_subplot(131)
+    ax_f1.set_ylim(0,1)
+    ax_p = figure.add_subplot(132)
+    ax_p.set_ylim(0,1)
+    ax_r = figure.add_subplot(133)
+    ax_r.set_ylim(0,1)
+    ax_f1.plot(ts, f1s)
+    ax_p.plot(ts, ps)
+    ax_r.plot(ts, rs)
+    plt.show()
 
 if __name__ == '__main__':
 
     main()
-
