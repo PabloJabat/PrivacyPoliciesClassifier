@@ -842,9 +842,9 @@ class CNN(nn.Module):
 
             fn = fn_l.sum()
 
-            precision = tp / (tp + fp)
+            precision = tp / (tp + fp + eps)
 
-            recall = tp / (tp + fn)
+            recall = tp / (tp + fn + eps)
 
             f1_micro = (precision * recall).div(precision + recall + eps) * 2
 
