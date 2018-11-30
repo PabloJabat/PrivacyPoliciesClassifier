@@ -3,18 +3,20 @@
 *.ods
 *.txt
 *.pyc
-*.pkl
 *.model
-*.pt
 *.png
+*.csv
 fastText-0.1.0
 agg_data/*
 raw_data/*
 processed_data/*
 glove.6B/*
 trained_models/*
+!trained_models/Multiclass
+trained_models/Multiclass/best_thresholds.pkl
 trained_models_pics/*
 embeddings_data/*
+embeddings_data_FT/*
 datasets/*
 GoldStandard12
 GoldStandard12 Polisis
