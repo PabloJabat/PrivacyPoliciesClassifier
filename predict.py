@@ -3,6 +3,7 @@ from privacy_policies_dataset import PrivacyPoliciesDataset as PPD
 from os.path import join, isfile
 from os import listdir
 from collections import OrderedDict
+import re
 import time
 import torch
 import pickle
@@ -93,6 +94,14 @@ def _best_t_idx(y, y_pred):
 
     return idxs
 
+def best_ts(y, y_pred):
+    
+    ts = np.arange(0, 1, 0.01)
+    idxs = _best_t_idx(y, y_pred)
+    best_ts = [ts[i] for i in idxs]
+    best_ts = torch.tensor(best_ts)
+    return best_ts
+
 def macro_metrics(y, y_hat):
     
     eps = 1e-10
@@ -138,25 +147,22 @@ def save_metrics(y, y_pred, path):
     
     def label_scores(y, y_pred, label, idx):          
     
-        f1s, ps, rs, ts = predict._metrics_wrt_t(y[:,label], y_pred[:,label])
+        f1s, ps, rs, ts = _metrics_wrt_t(y[:,label], y_pred[:,label])
         best_scores = f1s[idx], ps[idx], rs[idx]
-        scores_05 = predict._metrics_t(y[:,label], y_pred[:,label], 0.5)
+        scores_05 = _metrics_t(y[:,label], y_pred[:,label], 0.5)
         return scores_05 + best_scores
+    
+    round4 = lambda x: round(x,4)
     
     with open(path, 'w') as f:
         writer = csv.writer(f)
-        idxs = predict._best_t_idx(y, y_pred)
+        idxs = _best_t_idx(y, y_pred)
         for label, idx in zip(range(12), idxs):
             scores = label_scores(y, y_pred, label, idx)
+            scores = map(round4, scores)
             writer.writerows([scores])
 
-def load_model(path, label):
-    
-    #We set the name of the model and its parameters
-    models_files = join(path, 'cnn_300_200_[100, 25]_1_[3]_label{}_polisis_state.pt')  
-    model_file = models_files.format(label)
-    params_files = join(path, 'cnn_300_200_[100, 25]_1_[3]_label{}_polisis_params.pkl')
-    params_file = params_files.format(label)
+def load_model(model_file, params_file):
     
     #We now load the parameters
     with open(params_file, 'rb') as f:
@@ -170,10 +176,37 @@ def load_model(path, label):
 
 def load_12CNN_model(path):
     
+    def search_state(states, label):
+    
+        pattern = r'cnn_300_200_\[100, 25\]_1_\[3\]_\w*label{}_polisis_state.pt'
+        pattern = pattern.format(label)
+        for state in states:
+            match = re.match(pattern, state)
+            if match:
+                return state
+        
+    def search_params(params, label):
+    
+        pattern = r'cnn_300_200_\[100, 25\]_1_\[3\]_\w*label{}_polisis_params.pkl'
+        pattern = pattern.format(label)
+        for param in params:
+            match = re.match(pattern, param)
+            if match:
+                return param
+    
     #We instantiate an empty dictionary that will contain the models
     model12cnn = OrderedDict()
+    
+    #Fetch the names of all the files
+    states = [f for f in listdir(path) if isfile(join(path,f)) and '_state.pt' in f]
+    params = [f for f in listdir(path) if isfile(join(path,f)) and '_params.pkl' in f]
+    
     for label in range(12):
-        model12cnn['model{}'.format(label)] = load_model(path, label)
+        model_file = search_state(states, label)
+        model_file = join(path, model_file)
+        params_file = search_params(params, label)
+        params_file = join(path, params_file)
+        model12cnn['model{}'.format(label)] = load_model(model_file, params_file)
         
     return model12cnn
 
